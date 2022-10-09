@@ -15,7 +15,7 @@ macro bind(def, element)
 end
 
 # ╔═╡ 96761e57-4055-4e95-8699-cf7417e58a7a
-using PlutoUI, Plots; plotly(size=(600, 400))
+using PlutoUI, Plots, LaTeXStrings; plotly(size=(600, 400))
 
 # ╔═╡ 0bf8a54b-0d8a-4fbd-a579-c63206ed886f
 md"# Math test 2019, part 1"
@@ -111,13 +111,16 @@ md"$\begin{align}
 md"## Exercise 4"
 
 # ╔═╡ a492fc48-f46d-4d4f-a170-d748e62b89ca
-md"$7 \times ((48.3-x)\times 2)=161$"
+md"$7 \cdot ((48.3-x)\cdot 2)=161$"
 
 # ╔═╡ f7496c45-a3f3-4bdb-8760-edc30705ac22
 md"Change $x$ by moving the slider"
 
 # ╔═╡ df8d1f80-8dec-4237-8700-81c8b8243244
 @bind x Slider(30:0.1:40, 30.0, true)
+
+# ╔═╡ 0e2d3c8b-1329-460f-b2ce-ef26a2651aeb
+println("x is now: $x")
 
 # ╔═╡ ced0de11-c52f-438e-80c7-144cf178482f
 begin
@@ -140,21 +143,34 @@ end
 begin
 	my_plot = plot(lhs_function,
 		xlims = (30, 40),
+		xlabel = "x",
+		ylabel = "f(x)",
+		label = "lhs(x)",
 		#linewidth=3,
-		#hover = x,
-		legend = false,
+		#legend = false,
 	)
-	hline!([161])
-	vline!([x])
+	hline!(
+		[rhs],
+		label="rhs(x) == $rhs",
+	)
+	vline!([x], label="")
 end
+
+# ╔═╡ 46f99f7e-4aaf-451e-a191-4909c72c59fa
+my_latex_string = L"x_{0}"
+
+# ╔═╡ 8113313a-8a1d-4657-b025-57c0f2890d37
+typeof(my_latex_string)
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
 [deps]
+LaTeXStrings = "b964fa9f-0449-5b57-a5c2-d3ea65f4040f"
 Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
 PlutoUI = "7f904dfe-b85e-4ff6-b463-dae2292396a8"
 
 [compat]
+LaTeXStrings = "~1.3.0"
 Plots = "~1.35.2"
 PlutoUI = "~0.7.43"
 """
@@ -1115,13 +1131,16 @@ version = "1.4.1+0"
 # ╟─13463917-0019-4075-9579-1ca806249ca9
 # ╟─1d09f126-4dee-4c0f-8cda-0ad94d99e77b
 # ╟─a5195084-edb5-4886-8fde-2aed02069b63
-# ╠═5736f3dc-4f30-42dd-925a-7469ff353eeb
+# ╟─5736f3dc-4f30-42dd-925a-7469ff353eeb
 # ╟─96761e57-4055-4e95-8699-cf7417e58a7a
-# ╟─a492fc48-f46d-4d4f-a170-d748e62b89ca
+# ╠═a492fc48-f46d-4d4f-a170-d748e62b89ca
 # ╟─f7496c45-a3f3-4bdb-8760-edc30705ac22
 # ╟─df8d1f80-8dec-4237-8700-81c8b8243244
+# ╟─0e2d3c8b-1329-460f-b2ce-ef26a2651aeb
 # ╟─ced0de11-c52f-438e-80c7-144cf178482f
 # ╟─3de32610-55aa-43cc-8d36-7fb9b631db02
 # ╟─28a6c53d-ed2d-4be7-8d06-3b44664d7d18
+# ╟─46f99f7e-4aaf-451e-a191-4909c72c59fa
+# ╟─8113313a-8a1d-4657-b025-57c0f2890d37
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
