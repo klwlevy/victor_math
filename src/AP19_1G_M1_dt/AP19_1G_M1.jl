@@ -17,6 +17,9 @@ end
 # ╔═╡ 96761e57-4055-4e95-8699-cf7417e58a7a
 using PlutoUI, Plots, LaTeXStrings; plotly(size=(600, 400))
 
+# ╔═╡ fd92bc64-3c9a-46dc-a79c-78bc27107c7a
+using DataFrames, Dates, Statistics
+
 # ╔═╡ 0bf8a54b-0d8a-4fbd-a579-c63206ed886f
 md"# Math test 2019, part 1"
 
@@ -162,14 +165,138 @@ my_latex_string = L"x_{0}"
 # ╔═╡ 8113313a-8a1d-4657-b025-57c0f2890d37
 typeof(my_latex_string)
 
+# ╔═╡ bf7ea71a-f669-4337-897f-d280c2486122
+md"## Exercise 7"
+
+# ╔═╡ abe02dcb-a4fe-4eb4-8282-5d8117941c5f
+begin
+	weekdays = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+	max_temp = [25, 25, 19, 22, 27, 25, 23]
+	min_temp = [12, 13, 12, 12, 13, 14, 13]
+	temp_df = DataFrame(weekday=weekdays, max_temp=max_temp, min_temp=min_temp)
+end
+
+# ╔═╡ 67b8eef5-e62d-4c2d-8c08-8b090a6ec057
+select!(temp_df,
+	:,
+	[:max_temp, :min_temp] => ByRow(-) => :temp_diff
+)
+
+# ╔═╡ 62da14ed-3a5d-45b3-87ac-a6c5aa4f1131
+sort!(temp_df, order(:temp_diff, rev=true))
+
+# ╔═╡ 2d0f2e96-e0e8-4bb4-babe-c03a62799a22
+avg_mean_temp = mean(temp_df.max_temp)
+
+# ╔═╡ 8a682e33-e9e3-4aba-8a22-800ef8beab23
+rounded_avg_mean_temp = round(avg_mean_temp, digits=1)
+
+# ╔═╡ 57b1ffa8-d1de-45e5-9a07-d443ea248051
+md"## Excercise 8"
+
+# ╔═╡ 3590a7a6-cb36-4e4a-a6f3-017b108ef509
+plants_per_row = 28/2
+
+# ╔═╡ 5743591e-b5c1-4376-a6fb-7cb4a0e7d25e
+total_num_rows = 84 / plants_per_row
+
+# ╔═╡ 108b06cb-3cbb-413e-8606-a3ad5a19e791
+strawberry_weight_in_kg = 84*0.25
+
+# ╔═╡ 780caffb-81ee-415b-8e2a-c6dccafff4e2
+md"## Exercise 11"
+
+# ╔═╡ 14da245c-4257-4a4a-abd1-e15c1a6e594a
+md" Set an assumed amount in CHF for a twin:"
+
+# ╔═╡ d61de132-a841-4484-91ea-87b3c29d7c4f
+@bind twins_get Slider(1:1:30, 1, true)
+
+# ╔═╡ 4f24b55d-34f4-4496-9e1d-0774e75ff4ba
+begin 
+	A = 2*twins_get
+	B = 2*twins_get
+	C = 2*twins_get
+	D = 1*twins_get
+	E = 1*twins_get
+	five_get_altogether = A + B + C + D + E
+end
+
+# ╔═╡ df8afe93-ba6f-454f-8bea-2b18a79c1b0d
+bar(
+	["what all 5 get", "Total Savings"], [five_get_altogether, 176],
+	ylim = (0, 200),
+	legend = false
+)
+
+# ╔═╡ ce92d281-f63d-4215-9605-572737cd55fd
+if five_get_altogether == 176
+	println("Children A, B and C get $A each, and the twins D and E get $D each")
+else
+	println("Adjust the slider for how much one twin gets")
+end
+
+# ╔═╡ 5c25b47d-7d10-4960-ad11-c5b3beb3bd99
+md"## Exercise 13"
+
+# ╔═╡ a2c11899-bc8d-4e18-8349-24568c5d4fb5
+numbers_to_sort = [1.3, 7//10, 9//8, 15//20, 27//20, 0.8]
+
+# ╔═╡ 2c18820e-cdb8-4e6c-9811-c4f233d45059
+names = ["1.3", "7/10", "9/8", "15/20", "27/20", "0.8"]
+
+# ╔═╡ fa870109-5c75-4179-8e03-6d717dba319e
+sorted_numbers = sort(numbers_to_sort)
+
+# ╔═╡ e84fdfa1-53b3-49fd-9379-6a1b8614fb36
+df_to_sort = DataFrame(numbers_to_sort = numbers_to_sort, names = names)
+
+# ╔═╡ 462c5006-51a8-4b0d-8a5c-5b8b0d8c9bf2
+sorted_df = sort(df_to_sort, :numbers_to_sort)
+
+# ╔═╡ 97a3a8dd-0a1e-4289-af43-e06d33b563cb
+md"## Exercise 14"
+
+# ╔═╡ 9116e318-5a0c-4732-a3e8-1c92f5b22096
+begin
+	height_in_cm = 6
+	total_length_in_cm = 24
+	total_width_in_cm = 20
+	remaining_length_in_cm = total_length_in_cm - 2*height_in_cm
+	remaining_width_in_cm = total_width_in_cm - 2*height_in_cm
+end
+
+# ╔═╡ e9914b34-4dc8-4321-8c82-5e9c27a3a4fb
+waste_area_in_sq_cm = 4*6^2
+
+# ╔═╡ b98d0f0f-6f51-435b-b178-75eb05b7fcce
+volume_in_cubic_cm = remaining_length_in_cm * remaining_width_in_cm * height_in_cm
+
+# ╔═╡ fb106c69-343c-4e27-956f-b1c29d34d00a
+md"## Exercise 15"
+
+# ╔═╡ c38500d4-e14a-4e1d-994f-9b687397b841
+md"$\begin{align}
+	\text{num legos in tower} \cdot (1 - \frac{4}{7}) \cdot (1-\frac{3}{5}) \cdot (1-\frac{2}{3}) = 6 \\
+	\text{num legos in tower} \cdot (\frac{\cancel{3}}{7}) \cdot (\frac{2}{5}) \cdot (\frac{1}{\cancel{3}}) = 6 \\
+	\text{num legos in tower} \cdot \frac{2}{35} = 6 \\
+	\text{num legos in tower} = 6 \cdot \frac{35}{2}  \\
+	\text{num legos in tower} = 3 \cdot 35 \\
+	\text{num legos in tower} = 105 \\
+\end{align}$"
+
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
 [deps]
+DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
+Dates = "ade2ca70-3891-5945-98fb-dc099432e06a"
 LaTeXStrings = "b964fa9f-0449-5b57-a5c2-d3ea65f4040f"
 Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
 PlutoUI = "7f904dfe-b85e-4ff6-b463-dae2292396a8"
+Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 
 [compat]
+DataFrames = "~1.4.1"
 LaTeXStrings = "~1.3.0"
 Plots = "~1.35.2"
 PlutoUI = "~0.7.43"
@@ -271,16 +398,32 @@ git-tree-sha1 = "d05d9e7b7aedff4e5b51a029dced05cfb6125781"
 uuid = "d38c429a-6771-53c6-b99e-75d170b6e991"
 version = "0.6.2"
 
+[[deps.Crayons]]
+git-tree-sha1 = "249fe38abf76d48563e2f4556bebd215aa317e15"
+uuid = "a8cc5b0e-0ffa-5ad4-8c14-923d3ee1735f"
+version = "4.1.1"
+
 [[deps.DataAPI]]
 git-tree-sha1 = "46d2680e618f8abd007bce0c3026cb0c4a8f2032"
 uuid = "9a962f9c-6df0-11e9-0e5d-c546b8b5ee8a"
 version = "1.12.0"
+
+[[deps.DataFrames]]
+deps = ["Compat", "DataAPI", "Future", "InvertedIndices", "IteratorInterfaceExtensions", "LinearAlgebra", "Markdown", "Missings", "PooledArrays", "PrettyTables", "Printf", "REPL", "Random", "Reexport", "SnoopPrecompile", "SortingAlgorithms", "Statistics", "TableTraits", "Tables", "Unicode"]
+git-tree-sha1 = "558078b0b78278683a7445c626ee78c86b9bb000"
+uuid = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
+version = "1.4.1"
 
 [[deps.DataStructures]]
 deps = ["Compat", "InteractiveUtils", "OrderedCollections"]
 git-tree-sha1 = "d1fff3a548102f48987a52a2e0d114fa97d730f0"
 uuid = "864edb3b-99cc-5e75-8d2d-829cb0a9cfe8"
 version = "0.18.13"
+
+[[deps.DataValueInterfaces]]
+git-tree-sha1 = "bfc1187b79289637fa0ef6d4436ebdfe6905cbd6"
+uuid = "e2d170a0-9d28-54be-80f0-106bbe20a464"
+version = "1.0.0"
 
 [[deps.Dates]]
 deps = ["Printf"]
@@ -347,6 +490,10 @@ deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
 git-tree-sha1 = "aa31987c2ba8704e23c6c8ba8a4f769d5d7e4f91"
 uuid = "559328eb-81f9-559d-9380-de523a88c83c"
 version = "1.0.10+0"
+
+[[deps.Future]]
+deps = ["Random"]
+uuid = "9fa8497b-333b-5362-9e8d-4d0656e87820"
 
 [[deps.GLFW_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Libglvnd_jll", "Pkg", "Xorg_libXcursor_jll", "Xorg_libXi_jll", "Xorg_libXinerama_jll", "Xorg_libXrandr_jll"]
@@ -434,10 +581,20 @@ git-tree-sha1 = "49510dfcb407e572524ba94aeae2fced1f3feb0f"
 uuid = "3587e190-3f89-42d0-90ee-14403ec27112"
 version = "0.1.8"
 
+[[deps.InvertedIndices]]
+git-tree-sha1 = "bee5f1ef5bf65df56bdd2e40447590b272a5471f"
+uuid = "41ab1584-1d38-5bbf-9106-f11c6c58b48f"
+version = "1.1.0"
+
 [[deps.IrrationalConstants]]
 git-tree-sha1 = "7fd44fd4ff43fc60815f8e764c0f352b83c49151"
 uuid = "92d709cd-6900-40b7-9082-c6be49f344b6"
 version = "0.1.1"
+
+[[deps.IteratorInterfaceExtensions]]
+git-tree-sha1 = "a3f24677c21f5bbe9d2a714f95dcd58337fb2856"
+uuid = "82899510-4779-5014-852e-03e436cf321d"
+version = "1.0.0"
 
 [[deps.JLFzf]]
 deps = ["Pipe", "REPL", "Random", "fzf_jll"]
@@ -716,11 +873,23 @@ git-tree-sha1 = "2777a5c2c91b3145f5aa75b61bb4c2eb38797136"
 uuid = "7f904dfe-b85e-4ff6-b463-dae2292396a8"
 version = "0.7.43"
 
+[[deps.PooledArrays]]
+deps = ["DataAPI", "Future"]
+git-tree-sha1 = "a6062fe4063cdafe78f4a0a81cfffb89721b30e7"
+uuid = "2dfb63ee-cc39-5dd5-95bd-886bf059d720"
+version = "1.4.2"
+
 [[deps.Preferences]]
 deps = ["TOML"]
 git-tree-sha1 = "47e5f437cc0e7ef2ce8406ce1e7e24d44915f88d"
 uuid = "21216c6a-2e73-6563-6e65-726566657250"
 version = "1.3.0"
+
+[[deps.PrettyTables]]
+deps = ["Crayons", "Formatting", "Markdown", "Reexport", "StringManipulation", "Tables"]
+git-tree-sha1 = "460d9e154365e058c4d886f6f7d6df5ffa1ea80e"
+uuid = "08abe8d2-0d0c-5749-adfa-8a2ac140af0d"
+version = "2.1.2"
 
 [[deps.Printf]]
 deps = ["Unicode"]
@@ -832,9 +1001,26 @@ git-tree-sha1 = "d1bf48bfcc554a3761a133fe3a9bb01488e06916"
 uuid = "2913bbd2-ae8a-5f71-8c99-4fb6c76f3a91"
 version = "0.33.21"
 
+[[deps.StringManipulation]]
+git-tree-sha1 = "46da2434b41f41ac3594ee9816ce5541c6096123"
+uuid = "892a3eda-7b42-436c-8928-eab12a02cf0e"
+version = "0.3.0"
+
 [[deps.TOML]]
 deps = ["Dates"]
 uuid = "fa267f1f-6049-4f14-aa54-33bafae1ed76"
+
+[[deps.TableTraits]]
+deps = ["IteratorInterfaceExtensions"]
+git-tree-sha1 = "c06b2f539df1c6efa794486abfb6ed2022561a39"
+uuid = "3783bdb8-4a98-5b6b-af9a-565f29a5fe9c"
+version = "1.0.1"
+
+[[deps.Tables]]
+deps = ["DataAPI", "DataValueInterfaces", "IteratorInterfaceExtensions", "LinearAlgebra", "OrderedCollections", "TableTraits", "Test"]
+git-tree-sha1 = "2d7164f7b8a066bcfa6224e67736ce0eb54aef5b"
+uuid = "bd369af6-aec1-5ad0-b16a-f7cc5008161c"
+version = "1.9.0"
 
 [[deps.Tar]]
 deps = ["ArgTools", "SHA"]
@@ -1114,33 +1300,62 @@ version = "1.4.1+0"
 # ╔═╡ Cell order:
 # ╟─0bf8a54b-0d8a-4fbd-a579-c63206ed886f
 # ╟─87f0422b-24f0-4b55-9bae-733a71bffc87
-# ╟─addc45ae-4f79-4779-93a6-5a87bbcd1d04
+# ╠═addc45ae-4f79-4779-93a6-5a87bbcd1d04
 # ╟─8ee35258-f9eb-4b15-a0d4-95037d80bc82
-# ╟─87613f91-3918-4429-a0d6-c0f3ff0167db
+# ╠═87613f91-3918-4429-a0d6-c0f3ff0167db
 # ╟─226e8d1f-1f34-4e92-bae2-f6379657bab1
-# ╟─e9f1e065-6d2d-4777-a5ac-a37ec91bd388
+# ╠═e9f1e065-6d2d-4777-a5ac-a37ec91bd388
 # ╟─2b672ab0-43ef-4fba-944d-d18181534696
 # ╟─6cb38e02-410a-450c-ace2-68af65f981ab
 # ╟─13734962-3fc5-469c-9119-5bbf986133af
-# ╟─6a35449f-e28d-4b60-9962-e46d90616f11
-# ╟─008f75dc-51ee-4841-b003-b6da1a1b99b8
-# ╟─438fd5ca-d83d-4e49-8c1a-d231a46d4032
+# ╠═6a35449f-e28d-4b60-9962-e46d90616f11
+# ╠═008f75dc-51ee-4841-b003-b6da1a1b99b8
+# ╠═438fd5ca-d83d-4e49-8c1a-d231a46d4032
 # ╟─746888d6-124c-4e7f-8c87-a448d53839fd
-# ╟─74a091ef-4abd-446d-a54b-a8b63c878b5a
+# ╠═74a091ef-4abd-446d-a54b-a8b63c878b5a
 # ╟─6543ec84-19ac-4828-9904-c71946bb2303
 # ╟─13463917-0019-4075-9579-1ca806249ca9
 # ╟─1d09f126-4dee-4c0f-8cda-0ad94d99e77b
-# ╟─a5195084-edb5-4886-8fde-2aed02069b63
-# ╟─5736f3dc-4f30-42dd-925a-7469ff353eeb
-# ╟─96761e57-4055-4e95-8699-cf7417e58a7a
-# ╠═a492fc48-f46d-4d4f-a170-d748e62b89ca
+# ╠═a5195084-edb5-4886-8fde-2aed02069b63
+# ╠═5736f3dc-4f30-42dd-925a-7469ff353eeb
+# ╠═96761e57-4055-4e95-8699-cf7417e58a7a
+# ╟─a492fc48-f46d-4d4f-a170-d748e62b89ca
 # ╟─f7496c45-a3f3-4bdb-8760-edc30705ac22
-# ╟─df8d1f80-8dec-4237-8700-81c8b8243244
+# ╠═df8d1f80-8dec-4237-8700-81c8b8243244
 # ╟─0e2d3c8b-1329-460f-b2ce-ef26a2651aeb
 # ╟─ced0de11-c52f-438e-80c7-144cf178482f
 # ╟─3de32610-55aa-43cc-8d36-7fb9b631db02
-# ╟─28a6c53d-ed2d-4be7-8d06-3b44664d7d18
+# ╠═28a6c53d-ed2d-4be7-8d06-3b44664d7d18
 # ╟─46f99f7e-4aaf-451e-a191-4909c72c59fa
 # ╟─8113313a-8a1d-4657-b025-57c0f2890d37
+# ╠═bf7ea71a-f669-4337-897f-d280c2486122
+# ╠═fd92bc64-3c9a-46dc-a79c-78bc27107c7a
+# ╠═abe02dcb-a4fe-4eb4-8282-5d8117941c5f
+# ╠═67b8eef5-e62d-4c2d-8c08-8b090a6ec057
+# ╠═62da14ed-3a5d-45b3-87ac-a6c5aa4f1131
+# ╠═2d0f2e96-e0e8-4bb4-babe-c03a62799a22
+# ╠═8a682e33-e9e3-4aba-8a22-800ef8beab23
+# ╠═57b1ffa8-d1de-45e5-9a07-d443ea248051
+# ╟─3590a7a6-cb36-4e4a-a6f3-017b108ef509
+# ╟─5743591e-b5c1-4376-a6fb-7cb4a0e7d25e
+# ╠═108b06cb-3cbb-413e-8606-a3ad5a19e791
+# ╟─780caffb-81ee-415b-8e2a-c6dccafff4e2
+# ╟─14da245c-4257-4a4a-abd1-e15c1a6e594a
+# ╟─d61de132-a841-4484-91ea-87b3c29d7c4f
+# ╟─4f24b55d-34f4-4496-9e1d-0774e75ff4ba
+# ╟─df8afe93-ba6f-454f-8bea-2b18a79c1b0d
+# ╟─ce92d281-f63d-4215-9605-572737cd55fd
+# ╠═5c25b47d-7d10-4960-ad11-c5b3beb3bd99
+# ╠═a2c11899-bc8d-4e18-8349-24568c5d4fb5
+# ╠═2c18820e-cdb8-4e6c-9811-c4f233d45059
+# ╠═fa870109-5c75-4179-8e03-6d717dba319e
+# ╠═e84fdfa1-53b3-49fd-9379-6a1b8614fb36
+# ╠═462c5006-51a8-4b0d-8a5c-5b8b0d8c9bf2
+# ╠═97a3a8dd-0a1e-4289-af43-e06d33b563cb
+# ╠═9116e318-5a0c-4732-a3e8-1c92f5b22096
+# ╠═e9914b34-4dc8-4321-8c82-5e9c27a3a4fb
+# ╠═b98d0f0f-6f51-435b-b178-75eb05b7fcce
+# ╠═fb106c69-343c-4e27-956f-b1c29d34d00a
+# ╟─c38500d4-e14a-4e1d-994f-9b687397b841
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
