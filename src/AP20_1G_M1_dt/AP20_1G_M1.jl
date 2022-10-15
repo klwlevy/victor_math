@@ -14,323 +14,409 @@ macro bind(def, element)
     end
 end
 
-# ╔═╡ 96761e57-4055-4e95-8699-cf7417e58a7a
-using PlutoUI, Plots, LaTeXStrings; plotly(size=(600, 400))
+# ╔═╡ 181c8e9d-6dee-4c9e-9a72-512877de747e
+using PlutoUI
 
-# ╔═╡ fd92bc64-3c9a-46dc-a79c-78bc27107c7a
-using DataFrames, Dates, Statistics
+# ╔═╡ 09773604-9610-4be0-939a-132581a34384
+using Plots
 
-# ╔═╡ b671ef10-e8a7-41f0-889e-68e1fcbae556
-using Latexify
+# ╔═╡ 3a7ea42d-3d18-47ef-af86-17ea0474b542
+using DataFrames
+
+# ╔═╡ 615ec44d-faaf-488b-8621-707ca67e32e8
+using Latexify, LaTeXStrings
+
+# ╔═╡ fc4eef66-c767-4c68-931c-50084dc92655
+using Primes
 
 # ╔═╡ 0bf8a54b-0d8a-4fbd-a579-c63206ed886f
-md"# Math test 2019, part 1"
+md"# Math test 2020, part 1"
 
 # ╔═╡ 87f0422b-24f0-4b55-9bae-733a71bffc87
-TableOfContents()
+PlutoUI.TableOfContents()
 
 # ╔═╡ addc45ae-4f79-4779-93a6-5a87bbcd1d04
 md"## Exercise 1a"
 
 # ╔═╡ 8ee35258-f9eb-4b15-a0d4-95037d80bc82
-md"$292.32 m \cdot 72 = \text{? } dm$"
+md"$7.2 dm = 72 cm = 720 mm \boldsymbol{>} 72 mm$"
 
-# ╔═╡ 87613f91-3918-4429-a0d6-c0f3ff0167db
-md"Solution 1a:"
+# ╔═╡ c7ed5510-38a1-40d1-8367-e567c6c9eba5
+md"$720\ 000 cm = 7\ 200 m = 7.2 km \boldsymbol{=} 7.2 km$"
 
-# ╔═╡ 226e8d1f-1f34-4e92-bae2-f6379657bab1
-md"$\begin{align}
-	292.32 m \cdot 72 = \\
-	292.32 \cdot 1m \cdot 72 = \\
-	292.32 \cdot 10dm \cdot 72 = \\
-	2923.2 dm \cdot 72 = \\
-	2923.2 \cdot 72 dm = \\
-	\text{\{calculate...\}} = \\
-	210470.4 dm
-\end{align}$"
-
-# ╔═╡ e9f1e065-6d2d-4777-a5ac-a37ec91bd388
-_1a_dm_number = 2923.2*72
-
-# ╔═╡ 2b672ab0-43ef-4fba-944d-d18181534696
+# ╔═╡ 26162320-2d1a-403a-83d2-94855cbcc24a
 md"## Exercise 1b"
 
-# ╔═╡ 6cb38e02-410a-450c-ace2-68af65f981ab
-md"$16208 + q = 35692 - 7012$"
+# ╔═╡ 1ea321d8-ca31-4c1a-bb84-65bfd1c9e881
+md"$612\ 300 mm^2 = 6 123 cm^2 = 61.23 dm^2 \boldsymbol{>} 6.123 dm^2$"
 
-# ╔═╡ 13734962-3fc5-469c-9119-5bbf986133af
-md"Solution 1b:"
+# ╔═╡ c971dd72-20b8-4198-b635-ff44763fb261
+md"$0.6123 m^2 = 61.23 dm^2 = 6\ 123 cm^2 = 612\ 300 mm^2 \boldsymbol{<} 6\ 123\ 000 mm^2$"
 
-# ╔═╡ 6a35449f-e28d-4b60-9962-e46d90616f11
-md"$\begin{align}
-	16208 + q = 35692 - 7012 \\
-	q + 16208 = 35692 - 7012 \\
-	q + 16208 - 16208 = 35692 - 7012 -16208 \\
-	q = 35692 - 7012 -16208 \\
-	q = \text{\{calculate...\}} = 12472 \\
-\end{align}$"
-
-# ╔═╡ 008f75dc-51ee-4841-b003-b6da1a1b99b8
+# ╔═╡ 47545269-06ff-4d0a-ab70-db7490dc401a
 md"## Exercise 1c"
 
-# ╔═╡ 438fd5ca-d83d-4e49-8c1a-d231a46d4032
-md"$64 \frac{9}{10} kg : 40g =$"
+# ╔═╡ b4f8bacf-9371-456a-bcd2-b67edd19e153
+md"$20.58 dm^3 = \{1 m^3 = 1000 dm^3\} = 0.02058 m^3 \boldsymbol{<} 0.2058 m^3$"
 
-# ╔═╡ 746888d6-124c-4e7f-8c87-a448d53839fd
-md"Solution 1c:"
+# ╔═╡ 1cc4cf55-7e1c-4946-90fc-096046bb7564
+md"$2\ 058\ 000 mm^3 = 2058 cm^3 = 2.058 dm^3 \boldsymbol{<} 2.58 dm^3$"
 
-# ╔═╡ 74a091ef-4abd-446d-a54b-a8b63c878b5a
-md"$\begin{align}
-	64 \frac{9}{10} kg : 40g = \\
-	64.9 kg : 40g = \\
-	64.9 \cdot 1kg : 40g = \\
-	64.9 \cdot 1000 g : 40g = \\
-	64900 g : 40g = \\
-	64900 : 40 \cdot \frac{\cancel{g}}{\cancel{g}} = \\
-	\frac{64900}{40} = \\
-	\frac{6490}{4} = \\
-	\frac{3245}{2} = \\
-	1622.5
-\end{align}$"
-
-# ╔═╡ 6543ec84-19ac-4828-9904-c71946bb2303
+# ╔═╡ 6b6b7ae3-9995-455a-a3a3-9e3074f8fac7
 md"## Exercise 2"
 
-# ╔═╡ 13463917-0019-4075-9579-1ca806249ca9
-md"Convert $23.7$ minutes into seconds"
-
-# ╔═╡ 1d09f126-4dee-4c0f-8cda-0ad94d99e77b
-md"Solution 2:"
-
-# ╔═╡ a5195084-edb5-4886-8fde-2aed02069b63
+# ╔═╡ 407fcc6f-99fe-442c-8a7f-009e575680e1
 md"$\begin{align}
-	23.7 min = \\
-	23.7 \cdot 1 min = \\
-	23.7 \cdot 60 s = \\
-	23.7 \cdot 60 \cdot s = \\
-	237 \cdot 6 \cdot s = \\
-	\text{\{calculate...\}} = \\
-	1422 s
+	(66.75-39.75) \cdot (0.43 + 0.27) &= \\
+	27 \cdot 0.7 &= \underline{18.9} 
 \end{align}$"
 
-# ╔═╡ 5736f3dc-4f30-42dd-925a-7469ff353eeb
-md"## Exercise 4"
+# ╔═╡ 3650f570-5cb2-4bc6-9b2c-a830dacf41cb
+md"## Exercise 3a"
 
-# ╔═╡ a492fc48-f46d-4d4f-a170-d748e62b89ca
-md"$7 \cdot ((48.3-x)\cdot 2)=161$"
+# ╔═╡ fb2188b5-8e4b-412b-8b4c-078048e7353b
+md"$73\ 284 - 8\ 097 - 24\ 702 = 40485$"
 
-# ╔═╡ f7496c45-a3f3-4bdb-8760-edc30705ac22
-md"Change $x$ by moving the slider"
+# ╔═╡ 83ab8b38-5897-4763-adb4-44465fdee471
+md"## Exercise 3b"
 
-# ╔═╡ df8d1f80-8dec-4237-8700-81c8b8243244
-@bind x Slider(30:0.1:40, 30.0, true)
+# ╔═╡ 7e26939d-624a-4c7d-82cb-1e54de36e1d8
+md"$\begin{align}
+	134 \frac{2}{5} hl : 14 &= \\
+	134.4 hl :14 &= \\
+	13440 l :14 &= \\
+	\frac{13440}{14}l &= \\
+	\{ \frac{13440}{14} = 960 \} &= \\
+	&= 960 l
+\end{align}$"
 
-# ╔═╡ 0e2d3c8b-1329-460f-b2ce-ef26a2651aeb
-println("x is now: $x")
+# ╔═╡ 253353a1-4b6b-4108-ad59-685745834b38
+md"## Exercise 5"
 
-# ╔═╡ ced0de11-c52f-438e-80c7-144cf178482f
-begin
-	rhs = 161
-	function lhs_function(x)
-		return 7*((48.3-x)*2)
-	end
-end
+# ╔═╡ 288ad7ec-e1f0-4a05-8f87-dc69cb34548c
+md"$\begin{align}
+	\text{grey area} &= \\
+	18m \cdot 12 m \cdot 2 + \frac{12m \cdot 12m}{2} \cdot 2 + 36m \cdot 12m &= \\
+	18 \cdot 12 \cdot 2 m^2 + 12^2 m^2 + 36 \cdot 12 m^2 &= \\
+	72 m^2 + 144 m^2 + 432 m^2 &= \\
+ 	(72 + 144 + 432) m^2 &= \underline{648 m^2}
+\end{align}$"
 
-# ╔═╡ 3de32610-55aa-43cc-8d36-7fb9b631db02
-begin
-	println("The left hand side is: ", lhs_function(x))
-	println("The right hand side is: ", rhs)
-	if lhs_function(x) == rhs
-		println("Horray - well done, Victor")
-	end
-end
-
-# ╔═╡ 28a6c53d-ed2d-4be7-8d06-3b44664d7d18
-begin
-	my_plot = plot(lhs_function,
-		xlims = (30, 40),
-		xlabel = "x",
-		ylabel = "f(x)",
-		label = "lhs(x)",
-		#linewidth=3,
-		#legend = false,
-	)
-	hline!(
-		[rhs],
-		label="rhs(x) == $rhs",
-	)
-	vline!([x], label="")
-end
-
-# ╔═╡ 46f99f7e-4aaf-451e-a191-4909c72c59fa
-my_latex_string = L"x_{0}"
-
-# ╔═╡ 8113313a-8a1d-4657-b025-57c0f2890d37
-typeof(my_latex_string)
-
-# ╔═╡ bf7ea71a-f669-4337-897f-d280c2486122
+# ╔═╡ 1674e8f8-8c3f-4c00-8ecf-6d6d58ed693c
 md"## Exercise 7"
 
-# ╔═╡ abe02dcb-a4fe-4eb4-8282-5d8117941c5f
+# ╔═╡ d39a03f8-86be-43dc-a386-f652a2b83eae
 begin
-	weekdays = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
-	max_temp = [25, 25, 19, 22, 27, 25, 23]
-	min_temp = [12, 13, 12, 12, 13, 14, 13]
-	temp_df = DataFrame(weekday=weekdays, max_temp=max_temp, min_temp=min_temp)
+	B_point = [6 8]
+	D_point = [5 0]
+	C_point = [1.5 4.5]
+	A_point = [9.5 3.5]
+	points = [B_point; D_point; C_point; A_point]
 end
 
-# ╔═╡ 67b8eef5-e62d-4c2d-8c08-8b090a6ec057
-select!(temp_df,
-	:,
-	[:max_temp, :min_temp] => ByRow(-) => :temp_diff
-)
 
-# ╔═╡ 62da14ed-3a5d-45b3-87ac-a6c5aa4f1131
-sort!(temp_df, order(:temp_diff, rev=true))
+# ╔═╡ e6e822d2-5e6c-4f68-af2c-454a616180b1
+begin 
+	# Plot the first diagonal, from B to D
+	p5 = plot(
+		[B_point[1], D_point[1]], [B_point[2], D_point[2]];
+		aspect_ratio=:equal,
+		label = "diagonal BD",
+		xlims = (0,12),
+		ylims = (0,12),
+	)
+	# Add point B
+	scatter!(
+		p5, 
+		[B_point[1]], [B_point[2]],
+		annotations = (
+			B_point[1], B_point[2], 
+			Plots.text(" B", :left)
+		),
+		label="",
+	)
+	# Add point A
+	scatter!(
+		p5, 
+		[A_point[1]], [A_point[2]],
+		annotations = (
+			A_point[1], A_point[2], 
+			Plots.text(" A", :left)
+		),
+		label="",
+	)
+	# Add point D
+	scatter!(
+		p5, 
+		[D_point[1]], [D_point[2]],
+		annotations = (
+			D_point[1], D_point[2], 
+			Plots.text(" D", :left)
+		),
+		label="",
+	)
+	# Add point C
+	scatter!(
+		p5, 
+		[C_point[1]], [C_point[2]],
+		annotations = (
+			C_point[1], C_point[2], 
+			Plots.text(" C", :left)
+		),
+		label="",
+	)
 
-# ╔═╡ 2d0f2e96-e0e8-4bb4-babe-c03a62799a22
-avg_max_temp = mean(temp_df.max_temp)
+	# Plot line from C to D
+	plot!(p5, [C_point[1], D_point[1]], [C_point[2], D_point[2]], label="")
+	# Plot line from C to B
+	plot!(p5, [C_point[1], B_point[1]], [C_point[2], B_point[2]], label="")
+	# Plot line from B to A
+	plot!(p5, [B_point[1], A_point[1]], [B_point[2], A_point[2]], label="")
+	# Plot line from D to A
+	plot!(p5, [D_point[1], A_point[1]], [D_point[2], A_point[2]], label="")
 
-# ╔═╡ 8a682e33-e9e3-4aba-8a22-800ef8beab23
-rounded_avg_max_temp = round(avg_max_temp, digits=1)
+	# Plot the second diagonal, from C to A
+	plot!(p5, [C_point[1], A_point[1]], [C_point[2], A_point[2]], label="diagonal CA")
+end
 
-# ╔═╡ 57b1ffa8-d1de-45e5-9a07-d443ea248051
-md"## Excercise 8"
+# ╔═╡ d0bbfe4c-b107-4dc7-a8f9-1e48fa35dc56
+md"## Exercise 8a"
 
-# ╔═╡ 3590a7a6-cb36-4e4a-a6f3-017b108ef509
-plants_per_row = 28/2
+# ╔═╡ 98fb9493-a210-4363-9a97-d8e0c07908e5
+md"$\begin{align}
+	\text{speed km/h} &= \frac{\text{kilometers}}{\text{hours}} \\
+	&= \frac{519 km}{45 min} = \frac{519 km}{\frac{3}{4} h} = \frac{519 \cdot 4}{3} km/h \\
+	&= 173 \cdot 4 km/h\\
+	&= 692 km/h\\
+	& \text{Hence, in one hour at this speed, the plane can fly 692 km} \\
+\end{align}$"
 
-# ╔═╡ 5743591e-b5c1-4376-a6fb-7cb4a0e7d25e
-total_num_rows = 84 / plants_per_row
+# ╔═╡ 94ca8520-eb7b-4174-aeeb-dc28efc81b27
+md"## Exercise 8b"
 
-# ╔═╡ 108b06cb-3cbb-413e-8606-a3ad5a19e791
-strawberry_weight_in_kg = 84*0.25
+# ╔═╡ bf91e524-ed3f-4508-be36-23f81e5e7e28
+md"$\begin{align}
+	\text{speed km/h} &= \frac{\text{kilometers}}{\text{hours}} \\
+	\text{kilometers} &= \text{speed km/h} \cdot \text{hours} \\
+	\text{hours} &= \frac{\text{kilometers}}{\text{speed km/h}} \\
+	& = \frac{48 km}{120 km/h} \\
+	& = \frac{48}{120}h \\
+	& = \frac{48}{120} \cdot 60 min \\
+	& = \frac{48}{2} min \\
+	& = 24 min \\
+	& \text{So in 24 minutes at the reduced speed 110 km/h, the car drives:} \\
+	\text{kilometers} &= \text{speed km/h} \cdot \text{hours} \\
+	\text{kilometers} &= 110 km/h \cdot 24 min \\
+	&= 110 km/\cancel{h} \cdot \frac{24}{60} \cancel{h} \\
+	&= \frac{110 \cdot 24}{60} km \\
+	&= \frac{110 \cdot 4}{10} km \\
+	&= 11 \cdot 4 km \\
+	&= \underline{44 km} \\
+\end{align}$"
 
-# ╔═╡ 780caffb-81ee-415b-8e2a-c6dccafff4e2
+# ╔═╡ 647149ea-94b6-49ea-94c8-ba9ba67c547d
+md"## Exercise 9a"
+
+# ╔═╡ 0a68e5d2-dabf-42c7-aa87-19f1b661f28c
+md"$\begin{align}
+	\text{pages of book} &= \text{pages per day} \cdot \text{number of days} \\
+	&= 8 \cdot 36 pages\\
+	&= 288 pages \\
+	& \text{So at reading speed 12 pages per day,} \\
+	& \text{it would take this many days to read the book:} \\
+	\text{number of days} &= \frac{\text{pages of book}}{\text{pages per day}} \\
+	&= \frac{288 \cancel{pages}}{12 \cancel{pages}/day} \\ 
+	&= \frac{288}{12}days \\ 
+	&= \frac{144}{6}days \\ 
+	&= \frac{72}{3}days \\ 
+	&= \underline{24days} \\ 
+	& \text{So with 50\% higher reading speed, the book completion time} \\
+	& \text{gets reduced to 2/3 of the original time} \\
+\end{align}$"
+
+# ╔═╡ 9ca49db4-97c9-443d-9517-b56135ed56af
+md"## Exercise 9b"
+
+# ╔═╡ 71ad2033-039a-48b9-b70b-35e2ffd6197f
+md"$\begin{align}
+	\text{number of days} &= \frac{\text{pages of book}}{\text{pages per day}} \\
+	&= \frac{288+96 \cancel{pages}}{12 \cancel{pages}/day} \\ 
+	&= \frac{384}{12}days \\ 
+	&= \frac{192}{6}days \\ 
+	&= \frac{96}{3}days \\ 
+	&= 32 days \\ 
+	&= 24 days \cdot x \\ 
+	& \text{i.e.} \\
+	x &= \frac{32}{24} \\ 
+	&= \frac{4}{3} \\ 
+	& \text{So with 1/3 more pages, the completion time }\\
+	& \text{increases to 4/3 of the original time} \\
+\end{align}$"
+
+# ╔═╡ a51a10e3-1cd7-4831-aecd-28ca6f2410df
+md"## Exercise 10a"
+
+# ╔═╡ 96a7f1b4-5c03-44bd-b44f-2919788e8f68
+md"$\begin{align}
+	\text{degrees per minute} &= \frac{360°}{12 \cdot 60min}  = \frac{1}{2} °/min \\
+	& \text{hence, in 2 minutes the angle will increase from 137° to 138°}
+\end{align}$"
+
+# ╔═╡ 0f05823c-249e-4c38-a16d-4405008b8927
+md"## Exercise 10b"
+
+# ╔═╡ 6abfcccd-0a4b-4333-a252-d72a283a62b9
+md"$\begin{align}
+	\frac{137\cancel{°}}{\frac{1}{2}\cancel{°}/min} &= \\
+	137 \cdot 2 min &= \\
+	274 min &= \\
+	\frac{274}{60} h &= 4h34min \\
+	&\text{The time is 34 minutes past 4}
+\end{align}$"
+
+# ╔═╡ f6e3cd47-190d-4ec2-8fe5-7cf79331792d
 md"## Exercise 11"
 
-# ╔═╡ 14da245c-4257-4a4a-abd1-e15c1a6e594a
-md" Set an assumed amount in CHF for a twin:"
-
-# ╔═╡ d61de132-a841-4484-91ea-87b3c29d7c4f
-@bind twins_get Slider(1:1:30, 1, true)
-
-# ╔═╡ 4f24b55d-34f4-4496-9e1d-0774e75ff4ba
-begin 
-	A = 2*twins_get
-	B = 2*twins_get
-	C = 2*twins_get
-	D = 1*twins_get
-	E = 1*twins_get
-	five_get_altogether = A + B + C + D + E
-end
-
-# ╔═╡ df8afe93-ba6f-454f-8bea-2b18a79c1b0d
-bar(
-	["what all 5 get", "Total Savings"], [five_get_altogether, 176],
-	ylim = (0, 200),
-	legend = false
+# ╔═╡ 0f6fa22e-a5da-4420-834a-4e0927096953
+matches_df = DataFrame(
+	num_triangles = [1, 2, 3, 4,  5, 10, 20,1000],
+	num_matches = 	[3, 5, 7, 9, 11, 21, 41, 2001]
 )
 
-# ╔═╡ ce92d281-f63d-4215-9605-572737cd55fd
-if five_get_altogether == 176
-	println("Children A, B and C get $A each, and the twins D and E get $D each")
-else
-	println("Adjust the slider for how much one twin gets")
+# ╔═╡ 36e8bda7-e5c6-49d8-823b-c454abfd53c3
+@bind matches Slider(1:1:100, 11, true)
+
+# ╔═╡ c4f59469-46e5-4c93-94e7-2e4edd9cc5f1
+function triangles(matches)
+	return (matches - 1)/2
 end
 
-# ╔═╡ 5c25b47d-7d10-4960-ad11-c5b3beb3bd99
-md"## Exercise 13"
-
-# ╔═╡ a2c11899-bc8d-4e18-8349-24568c5d4fb5
-numbers_to_sort = [1.3, 7//10, 9//8, 15//20, 27//20, 0.8]
-
-# ╔═╡ 2c18820e-cdb8-4e6c-9811-c4f233d45059
-names = ["1.3", "7/10", "9/8", "15/20", "27/20", "0.8"]
-
-# ╔═╡ fa870109-5c75-4179-8e03-6d717dba319e
-sorted_numbers = sort(numbers_to_sort)
-
-# ╔═╡ e84fdfa1-53b3-49fd-9379-6a1b8614fb36
-df_to_sort = DataFrame(numbers_to_sort = numbers_to_sort, names = names)
-
-# ╔═╡ 462c5006-51a8-4b0d-8a5c-5b8b0d8c9bf2
-sorted_df = sort(df_to_sort, :numbers_to_sort)
-
-# ╔═╡ f6382780-0bcb-4a19-9402-418499e70d3f
-latex_df = latexify(sorted_df)
-
-# ╔═╡ 87da9ab6-74b8-40c7-bc4c-b159adb52e3e
-println(latex_df)
-
-# ╔═╡ 2fa9a131-8761-4e5d-9d19-898a00468295
-# Defining a julia function AND renders latex output of it(!)
-@latexrun f(x; y=2) = x/y
-
-# ╔═╡ 290f52f3-8fbd-44fb-b984-ffa906e1ead2
-# The function f exists and is callable
-f(4; y=8)
-
-# ╔═╡ 653393af-5b73-4f9d-bf41-c4ec2b5abb59
+# ╔═╡ 706b19c9-d205-4de2-9f8b-2406789ca1f2
 begin
-	#rhs = 161
-	@latexrun lhs(x) = 7*((48.3-x)*2)
+	match_plot = plot(
+		matches_df.num_matches,
+		matches_df.num_triangles,
+		xlabel = "number of matches",
+		ylabel = "number of triangles",
+		legend = false,
+		ylims = (0, 50),
+		xlims = (0, 100),
+		annotations = (
+			matches, triangles(matches), 
+			Plots.text("matches:$matches, triangles:$(triangles(matches))", :under)
+		)
+	)
+	vline!([matches], label="")
 end
 
-# ╔═╡ 9b7b7d72-f461-4c1a-afe9-7ba4dd507857
-typeof(lhs)
+# ╔═╡ 095beb5e-2ce1-4f66-b5cc-9496fc1ee000
+md"## Exercise 12"
 
-# ╔═╡ 59d71c12-518a-4240-9272-8dd39bb25c38
-my_latex_str = latexify("exp(-x) / 2")
+# ╔═╡ a4b65fc7-bb77-429e-9fce-9a39934763b0
+begin
+	#plotly()
+	gr()
+	rationals_str = ["7/20", "44/200", "17/25"]
+	rationals = [7//20, 44//200, 17//25]
+	decimals_str = ["0.35", "9/10", "1.1/2"]
+	decimals = [0.35, 9/10, 1.1/2]
+	data_df = DataFrame(rationals = rationals, decimals = decimals)
+	single_axis_plot = scatter(
+		data_df.rationals,
+		2 .* ones(length(rationals)),
+		annotations = (
+			rationals, 2 .* ones(length(rationals)), 
+			([Plots.text(latexify(rationals_str[i]), :over) for i in 1:length(rationals)])
+		),
+		legend = false,
+		xticks = 0:0.1:1,
+		framestyle = :origin,
+		yaxis=([], false),
+		ylims = (-10, 10),
+		xlims = (0,1)
+	)
+	scatter!(single_axis_plot,
+		data_df.decimals,
+		-2 .* ones(length(decimals)),
+		annotations = (
+			decimals, -2 .* ones(length(decimals)), 
+			([Plots.text(latexify(decimals_str[i]), :under) for i in 1:length(decimals)])
+		),
+		legend = false,
+		yaxis = false,
+	)
+end
 
-# ╔═╡ 97a3a8dd-0a1e-4289-af43-e06d33b563cb
+# ╔═╡ 2b4a3343-e319-4e15-b5b5-5971ce736910
+md"## Exercise 13a"
+
+# ╔═╡ 0714621b-c2a3-4bdc-9d39-1a0ed514372b
+begin 
+	five_digit_numbers = 10000:1:99999
+	five_d_df = DataFrame(five_digit_number = five_digit_numbers)
+	select!(five_d_df,
+		:,
+		:five_digit_number => ByRow(x -> sum(digits(x))) => :digit_sum
+	)
+	subset!(five_d_df, :digit_sum => ByRow(x -> x == 2))
+end
+
+# ╔═╡ 1e506be4-e623-4ca7-96c7-018d58953a2e
+md"## Exercise 13b"
+
+# ╔═╡ 6dec8238-ce33-4d26-b981-2cdd2ed7ad82
+begin
+	primes_df = DataFrame(n = 100:1:130)
+	subset!(primes_df, :n => ByRow(Primes.isprime))
+end
+
+# ╔═╡ 75d0a80b-7083-4d51-9a2f-a5e7a1f609dc
+md"## Exercise 13c"
+
+# ╔═╡ 2d9387d3-af49-4288-9bee-d87d1552732d
+begin
+	divisible_df = DataFrame(n = 200:1:300)
+	subset!(divisible_df, 
+		:n => ByRow(n -> mod(n,3) == 0),
+		:n => ByRow(n -> mod(n,6) == 0),
+		:n => ByRow(n -> mod(n,9) == 0)
+	)
+	select(divisible_df,
+		:,
+		:n => ByRow(n -> Int(n/3)) => :n_div_by_3,
+		:n => ByRow(n -> Int(n/6)) => :n_div_by_6,
+		:n => ByRow(n -> Int(n/9)) => :n_div_by_9,
+	)
+end
+
+# ╔═╡ e74ddb5c-10f1-4320-9ace-bdf253ec9b06
 md"## Exercise 14"
 
-# ╔═╡ 9116e318-5a0c-4732-a3e8-1c92f5b22096
-begin
-	height_in_cm = 6
-	total_length_in_cm = 24
-	total_width_in_cm = 20
-	remaining_length_in_cm = total_length_in_cm - 2*height_in_cm
-	remaining_width_in_cm = total_width_in_cm - 2*height_in_cm
-end
-
-# ╔═╡ e9914b34-4dc8-4321-8c82-5e9c27a3a4fb
-waste_area_in_sq_cm = 4*6^2
-
-# ╔═╡ b98d0f0f-6f51-435b-b178-75eb05b7fcce
-volume_in_cubic_cm = remaining_length_in_cm * remaining_width_in_cm * height_in_cm
-
-# ╔═╡ fb106c69-343c-4e27-956f-b1c29d34d00a
-md"## Exercise 15"
-
-# ╔═╡ c38500d4-e14a-4e1d-994f-9b687397b841
+# ╔═╡ 8c852885-4a00-4ed1-8561-66a307d05f9b
 md"$\begin{align}
-	\text{num legos in tower} \cdot (1 - \frac{4}{7}) \cdot (1-\frac{3}{5}) \cdot (1-\frac{2}{3}) = 6 \\
-	\text{num legos in tower} \cdot (\frac{\cancel{3}}{7}) \cdot (\frac{2}{5}) \cdot (\frac{1}{\cancel{3}}) = 6 \\
-	\text{num legos in tower} \cdot \frac{2}{35} = 6 \\
-	\text{num legos in tower} = 6 \cdot \frac{35}{2}  \\
-	\text{num legos in tower} = 3 \cdot 35 \\
-	\text{num legos in tower} = 105 \\
+	\frac{\text{remaining candies after 2nd child}}{2} = 3 &\implies \text{remaining candies after 2nd child} = 6 \\
+	\frac{\text{remaining candies after 1st child}}{2} = 3+6 = 9 &\implies \text{remaining candies after 1st child} = 18 \\
+	\frac{\text{bought candies}}{2} = 3+18 = 21 &\implies 
+	\text{bought candies} = 42
 \end{align}$"
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
 [deps]
 DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
-Dates = "ade2ca70-3891-5945-98fb-dc099432e06a"
 LaTeXStrings = "b964fa9f-0449-5b57-a5c2-d3ea65f4040f"
 Latexify = "23fbe1c1-3f47-55db-b15f-69d7ec21a316"
 Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
 PlutoUI = "7f904dfe-b85e-4ff6-b463-dae2292396a8"
-Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
+Primes = "27ebfcd6-29c5-5fa9-bf4b-fb8fc14df3ae"
 
 [compat]
 DataFrames = "~1.4.1"
 LaTeXStrings = "~1.3.0"
 Latexify = "~0.15.17"
-Plots = "~1.35.2"
-PlutoUI = "~0.7.43"
+Plots = "~1.35.3"
+PlutoUI = "~0.7.44"
+Primes = "~0.5.3"
 """
 
 # ╔═╡ 00000000-0000-0000-0000-000000000002
@@ -534,9 +620,9 @@ version = "3.3.8+0"
 
 [[deps.GR]]
 deps = ["Base64", "DelimitedFiles", "GR_jll", "HTTP", "JSON", "Libdl", "LinearAlgebra", "Pkg", "Preferences", "Printf", "Random", "Serialization", "Sockets", "Test", "UUIDs"]
-git-tree-sha1 = "cf7bf90e483228f6c988e474b420064e5351b892"
+git-tree-sha1 = "00a9d4abadc05b9476e937a5557fcce476b9e547"
 uuid = "28b8d3ca-fb5f-59d9-8090-bfdbd6d07a71"
-version = "0.69.4"
+version = "0.69.5"
 
 [[deps.GR_jll]]
 deps = ["Artifacts", "Bzip2_jll", "Cairo_jll", "FFMPEG_jll", "Fontconfig_jll", "GLFW_jll", "JLLWrappers", "JpegTurbo_jll", "Libdl", "Libtiff_jll", "Pixman_jll", "Pkg", "Qt5Base_jll", "Zlib_jll", "libpng_jll"]
@@ -569,9 +655,9 @@ version = "1.0.2"
 
 [[deps.HTTP]]
 deps = ["Base64", "CodecZlib", "Dates", "IniFile", "Logging", "LoggingExtras", "MbedTLS", "NetworkOptions", "OpenSSL", "Random", "SimpleBufferStream", "Sockets", "URIs", "UUIDs"]
-git-tree-sha1 = "4abede886fcba15cd5fd041fef776b230d004cee"
+git-tree-sha1 = "e8c58d5f03b9d9eb9ed7067a2f34c7c371ab130b"
 uuid = "cd3eb016-35fb-5094-929b-558a96fad6f3"
-version = "1.4.0"
+version = "1.4.1"
 
 [[deps.HarfBuzz_jll]]
 deps = ["Artifacts", "Cairo_jll", "Fontconfig_jll", "FreeType2_jll", "Glib_jll", "Graphite2_jll", "JLLWrappers", "Libdl", "Libffi_jll", "Pkg"]
@@ -601,6 +687,11 @@ version = "0.2.2"
 git-tree-sha1 = "f550e6e32074c939295eb5ea6de31849ac2c9625"
 uuid = "83e8ac13-25f8-5344-8a64-a9f2b223428f"
 version = "0.5.1"
+
+[[deps.IntegerMathUtils]]
+git-tree-sha1 = "f366daebdfb079fd1fe4e3d560f99a0c892e15bc"
+uuid = "18e54dd8-cb9d-406c-a71d-865a43cbb235"
+version = "0.1.0"
 
 [[deps.InteractiveUtils]]
 deps = ["Markdown"]
@@ -861,9 +952,9 @@ uuid = "efcefdf7-47ab-520b-bdef-62a2eaa19f15"
 
 [[deps.Parsers]]
 deps = ["Dates"]
-git-tree-sha1 = "3d5bf43e3e8b412656404ed9466f1dcbf7c50269"
+git-tree-sha1 = "6c01a9b494f6d2a9fc180a08b182fcb06f0958a0"
 uuid = "69de0a69-1ddd-5017-9359-2bf0b02dc9f0"
-version = "2.4.0"
+version = "2.4.2"
 
 [[deps.Pipe]]
 git-tree-sha1 = "6842804e7867b115ca9de748a0cf6b364523c16d"
@@ -882,9 +973,9 @@ uuid = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
 
 [[deps.PlotThemes]]
 deps = ["PlotUtils", "Statistics"]
-git-tree-sha1 = "8162b2f8547bc23876edd0c5181b27702ae58dce"
+git-tree-sha1 = "1f03a2d339f42dca4a4da149c7e15e9b896ad899"
 uuid = "ccf2f8ad-2431-5c83-bf29-c5338b663b6a"
-version = "3.0.0"
+version = "3.1.0"
 
 [[deps.PlotUtils]]
 deps = ["ColorSchemes", "Colors", "Dates", "Printf", "Random", "Reexport", "SnoopPrecompile", "Statistics"]
@@ -894,15 +985,15 @@ version = "1.3.1"
 
 [[deps.Plots]]
 deps = ["Base64", "Contour", "Dates", "Downloads", "FFMPEG", "FixedPointNumbers", "GR", "JLFzf", "JSON", "LaTeXStrings", "Latexify", "LinearAlgebra", "Measures", "NaNMath", "Pkg", "PlotThemes", "PlotUtils", "Printf", "REPL", "Random", "RecipesBase", "RecipesPipeline", "Reexport", "RelocatableFolders", "Requires", "Scratch", "Showoff", "SnoopPrecompile", "SparseArrays", "Statistics", "StatsBase", "UUIDs", "UnicodeFun", "Unzip"]
-git-tree-sha1 = "65451f70d8d71bd9d06821c7a53adbed162454c9"
+git-tree-sha1 = "524d9ff1b2f4473fef59678c06f9f77160a204b1"
 uuid = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
-version = "1.35.2"
+version = "1.35.3"
 
 [[deps.PlutoUI]]
 deps = ["AbstractPlutoDingetjes", "Base64", "ColorTypes", "Dates", "Hyperscript", "HypertextLiteral", "IOCapture", "InteractiveUtils", "JSON", "Logging", "Markdown", "Random", "Reexport", "UUIDs"]
-git-tree-sha1 = "2777a5c2c91b3145f5aa75b61bb4c2eb38797136"
+git-tree-sha1 = "6e33d318cf8843dade925e35162992145b4eb12f"
 uuid = "7f904dfe-b85e-4ff6-b463-dae2292396a8"
-version = "0.7.43"
+version = "0.7.44"
 
 [[deps.PooledArrays]]
 deps = ["DataAPI", "Future"]
@@ -921,6 +1012,12 @@ deps = ["Crayons", "Formatting", "Markdown", "Reexport", "StringManipulation", "
 git-tree-sha1 = "460d9e154365e058c4d886f6f7d6df5ffa1ea80e"
 uuid = "08abe8d2-0d0c-5749-adfa-8a2ac140af0d"
 version = "2.1.2"
+
+[[deps.Primes]]
+deps = ["IntegerMathUtils"]
+git-tree-sha1 = "311a2aa90a64076ea0fac2ad7492e914e6feeb81"
+uuid = "27ebfcd6-29c5-5fa9-bf4b-fb8fc14df3ae"
+version = "0.5.3"
 
 [[deps.Printf]]
 deps = ["Unicode"]
@@ -947,10 +1044,10 @@ uuid = "3cdcf5f2-1ef4-517c-9805-6587b60abb01"
 version = "1.3.0"
 
 [[deps.RecipesPipeline]]
-deps = ["Dates", "NaNMath", "PlotUtils", "RecipesBase"]
-git-tree-sha1 = "017f217e647cf20b0081b9be938b78c3443356a0"
+deps = ["Dates", "NaNMath", "PlotUtils", "RecipesBase", "SnoopPrecompile"]
+git-tree-sha1 = "9b1c0c8e9188950e66fc28f40bfe0f8aac311fe0"
 uuid = "01d81517-befc-4cb6-b9ec-a95719d0359c"
-version = "0.6.6"
+version = "0.6.7"
 
 [[deps.Reexport]]
 git-tree-sha1 = "45e428421666073eab6f2da5c9d310d99bb12f9b"
@@ -1049,9 +1146,9 @@ version = "1.0.1"
 
 [[deps.Tables]]
 deps = ["DataAPI", "DataValueInterfaces", "IteratorInterfaceExtensions", "LinearAlgebra", "OrderedCollections", "TableTraits", "Test"]
-git-tree-sha1 = "2d7164f7b8a066bcfa6224e67736ce0eb54aef5b"
+git-tree-sha1 = "c79322d36826aa2f4fd8ecfa96ddb47b174ac78d"
 uuid = "bd369af6-aec1-5ad0-b16a-f7cc5008161c"
-version = "1.9.0"
+version = "1.10.0"
 
 [[deps.Tar]]
 deps = ["ArgTools", "SHA"]
@@ -1329,72 +1426,59 @@ version = "1.4.1+0"
 """
 
 # ╔═╡ Cell order:
-# ╟─0bf8a54b-0d8a-4fbd-a579-c63206ed886f
+# ╠═0bf8a54b-0d8a-4fbd-a579-c63206ed886f
+# ╠═181c8e9d-6dee-4c9e-9a72-512877de747e
 # ╟─87f0422b-24f0-4b55-9bae-733a71bffc87
-# ╟─addc45ae-4f79-4779-93a6-5a87bbcd1d04
-# ╟─8ee35258-f9eb-4b15-a0d4-95037d80bc82
-# ╟─87613f91-3918-4429-a0d6-c0f3ff0167db
-# ╟─226e8d1f-1f34-4e92-bae2-f6379657bab1
-# ╟─e9f1e065-6d2d-4777-a5ac-a37ec91bd388
-# ╟─2b672ab0-43ef-4fba-944d-d18181534696
-# ╟─6cb38e02-410a-450c-ace2-68af65f981ab
-# ╟─13734962-3fc5-469c-9119-5bbf986133af
-# ╟─6a35449f-e28d-4b60-9962-e46d90616f11
-# ╟─008f75dc-51ee-4841-b003-b6da1a1b99b8
-# ╟─438fd5ca-d83d-4e49-8c1a-d231a46d4032
-# ╟─746888d6-124c-4e7f-8c87-a448d53839fd
-# ╟─74a091ef-4abd-446d-a54b-a8b63c878b5a
-# ╟─6543ec84-19ac-4828-9904-c71946bb2303
-# ╟─13463917-0019-4075-9579-1ca806249ca9
-# ╟─1d09f126-4dee-4c0f-8cda-0ad94d99e77b
-# ╟─a5195084-edb5-4886-8fde-2aed02069b63
-# ╟─5736f3dc-4f30-42dd-925a-7469ff353eeb
-# ╠═96761e57-4055-4e95-8699-cf7417e58a7a
-# ╠═a492fc48-f46d-4d4f-a170-d748e62b89ca
-# ╠═f7496c45-a3f3-4bdb-8760-edc30705ac22
-# ╟─df8d1f80-8dec-4237-8700-81c8b8243244
-# ╠═0e2d3c8b-1329-460f-b2ce-ef26a2651aeb
-# ╠═ced0de11-c52f-438e-80c7-144cf178482f
-# ╠═3de32610-55aa-43cc-8d36-7fb9b631db02
-# ╟─28a6c53d-ed2d-4be7-8d06-3b44664d7d18
-# ╟─46f99f7e-4aaf-451e-a191-4909c72c59fa
-# ╟─8113313a-8a1d-4657-b025-57c0f2890d37
-# ╟─bf7ea71a-f669-4337-897f-d280c2486122
-# ╟─fd92bc64-3c9a-46dc-a79c-78bc27107c7a
-# ╟─abe02dcb-a4fe-4eb4-8282-5d8117941c5f
-# ╟─67b8eef5-e62d-4c2d-8c08-8b090a6ec057
-# ╟─62da14ed-3a5d-45b3-87ac-a6c5aa4f1131
-# ╠═2d0f2e96-e0e8-4bb4-babe-c03a62799a22
-# ╟─8a682e33-e9e3-4aba-8a22-800ef8beab23
-# ╟─57b1ffa8-d1de-45e5-9a07-d443ea248051
-# ╟─3590a7a6-cb36-4e4a-a6f3-017b108ef509
-# ╟─5743591e-b5c1-4376-a6fb-7cb4a0e7d25e
-# ╟─108b06cb-3cbb-413e-8606-a3ad5a19e791
-# ╟─780caffb-81ee-415b-8e2a-c6dccafff4e2
-# ╟─14da245c-4257-4a4a-abd1-e15c1a6e594a
-# ╟─d61de132-a841-4484-91ea-87b3c29d7c4f
-# ╟─4f24b55d-34f4-4496-9e1d-0774e75ff4ba
-# ╟─df8afe93-ba6f-454f-8bea-2b18a79c1b0d
-# ╟─ce92d281-f63d-4215-9605-572737cd55fd
-# ╠═5c25b47d-7d10-4960-ad11-c5b3beb3bd99
-# ╠═a2c11899-bc8d-4e18-8349-24568c5d4fb5
-# ╟─2c18820e-cdb8-4e6c-9811-c4f233d45059
-# ╟─fa870109-5c75-4179-8e03-6d717dba319e
-# ╠═e84fdfa1-53b3-49fd-9379-6a1b8614fb36
-# ╠═462c5006-51a8-4b0d-8a5c-5b8b0d8c9bf2
-# ╠═b671ef10-e8a7-41f0-889e-68e1fcbae556
-# ╠═f6382780-0bcb-4a19-9402-418499e70d3f
-# ╠═87da9ab6-74b8-40c7-bc4c-b159adb52e3e
-# ╠═2fa9a131-8761-4e5d-9d19-898a00468295
-# ╠═290f52f3-8fbd-44fb-b984-ffa906e1ead2
-# ╠═653393af-5b73-4f9d-bf41-c4ec2b5abb59
-# ╠═9b7b7d72-f461-4c1a-afe9-7ba4dd507857
-# ╠═59d71c12-518a-4240-9272-8dd39bb25c38
-# ╟─97a3a8dd-0a1e-4289-af43-e06d33b563cb
-# ╟─9116e318-5a0c-4732-a3e8-1c92f5b22096
-# ╟─e9914b34-4dc8-4321-8c82-5e9c27a3a4fb
-# ╟─b98d0f0f-6f51-435b-b178-75eb05b7fcce
-# ╟─fb106c69-343c-4e27-956f-b1c29d34d00a
-# ╟─c38500d4-e14a-4e1d-994f-9b687397b841
+# ╠═addc45ae-4f79-4779-93a6-5a87bbcd1d04
+# ╠═8ee35258-f9eb-4b15-a0d4-95037d80bc82
+# ╠═c7ed5510-38a1-40d1-8367-e567c6c9eba5
+# ╠═26162320-2d1a-403a-83d2-94855cbcc24a
+# ╠═1ea321d8-ca31-4c1a-bb84-65bfd1c9e881
+# ╠═c971dd72-20b8-4198-b635-ff44763fb261
+# ╠═47545269-06ff-4d0a-ab70-db7490dc401a
+# ╠═b4f8bacf-9371-456a-bcd2-b67edd19e153
+# ╠═1cc4cf55-7e1c-4946-90fc-096046bb7564
+# ╠═6b6b7ae3-9995-455a-a3a3-9e3074f8fac7
+# ╠═407fcc6f-99fe-442c-8a7f-009e575680e1
+# ╠═3650f570-5cb2-4bc6-9b2c-a830dacf41cb
+# ╠═fb2188b5-8e4b-412b-8b4c-078048e7353b
+# ╠═83ab8b38-5897-4763-adb4-44465fdee471
+# ╠═7e26939d-624a-4c7d-82cb-1e54de36e1d8
+# ╠═253353a1-4b6b-4108-ad59-685745834b38
+# ╠═288ad7ec-e1f0-4a05-8f87-dc69cb34548c
+# ╠═1674e8f8-8c3f-4c00-8ecf-6d6d58ed693c
+# ╠═09773604-9610-4be0-939a-132581a34384
+# ╠═d39a03f8-86be-43dc-a386-f652a2b83eae
+# ╠═e6e822d2-5e6c-4f68-af2c-454a616180b1
+# ╠═d0bbfe4c-b107-4dc7-a8f9-1e48fa35dc56
+# ╠═98fb9493-a210-4363-9a97-d8e0c07908e5
+# ╠═94ca8520-eb7b-4174-aeeb-dc28efc81b27
+# ╠═bf91e524-ed3f-4508-be36-23f81e5e7e28
+# ╠═647149ea-94b6-49ea-94c8-ba9ba67c547d
+# ╠═0a68e5d2-dabf-42c7-aa87-19f1b661f28c
+# ╠═9ca49db4-97c9-443d-9517-b56135ed56af
+# ╠═71ad2033-039a-48b9-b70b-35e2ffd6197f
+# ╠═a51a10e3-1cd7-4831-aecd-28ca6f2410df
+# ╠═96a7f1b4-5c03-44bd-b44f-2919788e8f68
+# ╠═0f05823c-249e-4c38-a16d-4405008b8927
+# ╠═6abfcccd-0a4b-4333-a252-d72a283a62b9
+# ╠═f6e3cd47-190d-4ec2-8fe5-7cf79331792d
+# ╠═3a7ea42d-3d18-47ef-af86-17ea0474b542
+# ╠═0f6fa22e-a5da-4420-834a-4e0927096953
+# ╠═36e8bda7-e5c6-49d8-823b-c454abfd53c3
+# ╠═706b19c9-d205-4de2-9f8b-2406789ca1f2
+# ╠═c4f59469-46e5-4c93-94e7-2e4edd9cc5f1
+# ╠═095beb5e-2ce1-4f66-b5cc-9496fc1ee000
+# ╠═a4b65fc7-bb77-429e-9fce-9a39934763b0
+# ╠═615ec44d-faaf-488b-8621-707ca67e32e8
+# ╠═2b4a3343-e319-4e15-b5b5-5971ce736910
+# ╠═0714621b-c2a3-4bdc-9d39-1a0ed514372b
+# ╠═1e506be4-e623-4ca7-96c7-018d58953a2e
+# ╠═fc4eef66-c767-4c68-931c-50084dc92655
+# ╠═6dec8238-ce33-4d26-b981-2cdd2ed7ad82
+# ╠═75d0a80b-7083-4d51-9a2f-a5e7a1f609dc
+# ╠═2d9387d3-af49-4288-9bee-d87d1552732d
+# ╠═e74ddb5c-10f1-4320-9ace-bdf253ec9b06
+# ╠═8c852885-4a00-4ed1-8561-66a307d05f9b
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
