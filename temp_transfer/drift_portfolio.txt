@@ -1,0 +1,467 @@
+/** ABOUT -------------------------------------------------------------------------------------------------------------;
+
+    MACRO: drift_portfolio
+    AUTHOR: Walter Levy
+    DATE: 2019-10-24
+    PREFIX: k3t
+    CODE_STANDARD: A
+
+    DESCRIPTION ----------------------------------------------------------------------------------------------------
+
+        Takes a portfolio (on arbitrary dates) and daily returns and drifts portfolio weights across time, until
+        next portfolio date.
+
+        Handles a portfolio containing both equity (security_id > 0) and/or currency (security_id < 0).
+
+        When returns are missing, a replace missing methodology is used.
+
+        The created portfolio is always daily - between start_date and end_date when these given, otherwise from
+        first portfolio date until last return date.
+
+    INPUT ----------------------------------------------------------------------------------------------------------
+
+        %drift_portfolio(
+          * portfolio_ds =,     dataset: portfolio
+          * d_return_ds =,      dataset: daily returns
+          * return_var =,       return-variable in <d_return_ds>, example: net_eur_return
+            start_date =,       when unset: first portfolio date, example: 2019-01-01
+            end_date =,         when unset: last return date
+
+          * d_portfolio_ods =,  output dataset: daily portfolio
+
+            test_mode = 0       when 1: keep temporary data
+        );
+
+          * = mandatory
+
+        ------------------------------------------------------------------------------------------------------------
+
+        SAS_DATASET: <portfolio_ds>
+            portfolio                only one value allowed
+            security_id
+            date_
+            weight
+
+        SAS_DATASET: <d_return_ds>
+            security_id
+            from_date
+            date_
+            <return_var>
+
+    OUTPUT ---------------------------------------------------------------------------------------------------------
+
+        SAS_DATASET: <d_portfolio_ods>
+            portfolio
+            security_id
+            date_
+            weight
+
+    DEPENDENCIES ---------------------------------------------------------------------------------------------------
+
+%** INCLUDE MACROS ---------------------------------------------------------------------------------------------------*/
+
+    %include_macro(util\misc\date_macros);
+    %include_macro(util\misc\extract_vars_from_dataset);
+    %include_macro(util\misc\replace_missing);
+    %include_macro(util\time_series\create_time_flow_template);
+
+%** MACRO -------------------------------------------------------------------------------------------------------------;
+
+%macro drift_portfolio(
+    portfolio_ds =,
+    d_return_ds =,
+    return_var =,
+    start_date =,
+    end_date =,
+
+    d_portfolio_ods =,
+
+    test_mode = 0
+);
+%** CREATE TIME-PERIOD ------------------------------------------------------------------------------------------------;
+
+    %* Extract first portfolio date;
+    proc sql noprint;
+        select min(date_) format = %mdate_format() into :k3t_first_por_date from &portfolio_ds;
+    quit;
+
+    %* Create start date;
+    %if %date_to_num(&start_date) >= %date_to_num(&k3t_first_por_date) %then %do;
+        %let k3t_start_date = &start_date;
+    %end;
+    %else %do;
+        %let k3t_start_date = &k3t_first_por_date;
+    %end;
+    %let k3t_start_date_n = %date_to_num(&k3t_start_date);
+
+    %* Extract last portfolio date before start date;
+    proc sql noprint;
+        select max(date_) format = %mdate_format() into :k3t_last_por_date_bef_start_date from &portfolio_ds
+        where date_ <= &k3t_start_date_n;
+    quit;
+
+    %* Create extended start date;
+    %let k3t_ext_start_date = &k3t_last_por_date_bef_start_date;
+    %let k3t_ext_start_date_n = %date_to_num(&k3t_ext_start_date);
+
+    %* Extract last return date;
+    proc sql noprint;
+        select max(date_) format = %mdate_format() into :k3t_last_return_date from &d_return_ds;
+    quit;
+
+    %* Create end date;
+    %if %length(&end_date) > 0 %then %do;
+        %let k3t_end_date = &end_date;
+    %end;
+    %else %do;
+        %let k3t_end_date = &k3t_last_return_date;
+    %end;
+    %let k3t_end_date_n = %date_to_num(&k3t_end_date);
+
+    %put LOG: x7l_start_date = &x7l_start_date;
+    %put LOG: x7l_ext_start_date = &x7l_ext_start_date;
+    %put LOG: x7l_end_date = &x7l_end_date;
+
+%** CREATE DAILY TEMPLATE ---------------------------------------------------------------------------------------------;
+
+    %* Create time-flow template, include one extra day since calculations will be on from_date;
+    %create_time_flow_template(
+        start_date = &k3t_ext_start_date,
+        end_date = %next_business_date(&k3t_end_date),
+
+        freq = 1,
+        freq_unit = D,
+        date_rule = FBD,
+
+        time_flow_template_ods = k3t_time_flow_template
+    );
+
+    %* Extract all available portfolio dates;
+    proc sql;
+        create table k3t_por_date as
+        select distinct
+            portfolio,
+            date_ as por_date
+        from &portfolio_ds;
+    quit;
+
+    %* Extract all necessary return dates;
+    proc sql;
+        create table k3t_return_date as
+        select distinct
+            from_date,
+            date_
+        from k3t_time_flow_template;
+    quit;
+
+    %* Full join on return_dates and por_dates - for each portfolio and each return_date finding out most recent
+    %* por_date;
+    proc sql;
+        create table k3t_por_return_date_template as
+        select
+            b.portfolio,
+            a.from_date,
+            a.date_,
+            b.por_date,
+            a.from_date - b.por_date as por_age
+        from
+            k3t_return_date as a,
+            k3t_por_date as b
+        where calculated por_age >= 0
+        group by
+            b.portfolio,
+            a.from_date
+        having calculated por_age = min(calculated por_age)
+        order by b.portfolio, b.por_date, a.from_date;
+    quit;
+
+    %* Inner join securities - then number of rows is complete;
+    proc sql;
+        create table k3t_d_template as
+        select
+            a.portfolio,
+            b.security_id,
+            a.from_date,
+            a.date_,
+            a.por_date,
+            a.por_age
+        from
+            k3t_por_return_date_template as a
+            inner join &portfolio_ds as b on
+                a.portfolio = b.portfolio
+                and a.por_date = b.date_
+        order by a.portfolio, a.por_date, b.security_id, a.from_date;
+    quit;
+
+%** POPULATE TEMPLATE WITH WEIGHTS AND RETURNS ------------------------------------------------------------------------;
+
+    %* Left join weights on por_dates (for all return_date:s);
+    proc sql;
+        create table k3t_d_portfolio1 as
+        select
+            a.*,
+            b.weight as por_date_weight,
+            c.&return_var as return_
+        from
+            k3t_d_template as a
+            left join &portfolio_ds as b on
+                a.portfolio = b.portfolio
+                and a.security_id = b.security_id
+                and a.por_date = b.date_
+            left join &d_return_ds as c on
+                a.security_id = c.security_id and
+                a.from_date = c.from_date and
+                a.date_ = c.date_
+        order by a.portfolio, a.security_id, a.from_date;
+    quit;
+
+%** REPLACE MISSING RETURNS -------------------------------------------------------------------------------------------;
+
+    %* Create asset class variable to enable different missing value treatment;
+    proc sql;
+        create table k3t_d_portfolio2 as
+        select
+            *,
+            case
+                when security_id > 0 then "EQY"
+                when security_id < 0 then "CCY"
+                else "NA"
+            end length = 3 as asset_class
+        from k3t_d_portfolio1
+        order by portfolio, asset_class, from_date, date_, security_id;
+    quit;
+
+    %* Replace with median return for the asset class between from_date and date_, per portfolio;
+    %replace_missing(
+        dataset = k3t_d_portfolio2,
+        by_vars = portfolio asset_class from_date date_,
+        vars = return_,
+        replace_with = MEDIAN,
+
+        output_dataset = k3t_d_portfolio3
+    );
+
+    %* Emergency fallback, really bad data when this applies;
+    %replace_missing(
+        dataset = k3t_d_portfolio3,
+        by_vars =,
+        vars = return_,
+        replace_with = 0,
+
+        output_dataset = k3t_d_portfolio4
+    );
+    proc sort;
+        by portfolio por_date security_id from_date;
+    run;
+
+%** DRIFT WEIGHTS -----------------------------------------------------------------------------------------------------;
+
+    %* Extract max portfolio age;
+    proc sql noprint;
+        select max(por_age) into :k3t_max_por_age trimmed from k3t_d_portfolio4;
+    quit;
+
+    %* If max portfolio age is zero, that is portfolio frequency matches return frequency (daily mo-fri) perfectly,
+    %* no need to calculate return_index between por_dates;
+    %if &k3t_max_por_age = 0 %then %do;
+        data k3t_d_portfolio5;
+            set k3t_d_portfolio4;
+        run;
+    %end;
+    %else %do;
+        %* Create return index between last por_date and from_date - need this to calculate drifting weights
+        %* assuming dividends are reinvested in same stock;
+        proc expand
+            data = k3t_d_portfolio4
+            out = k3t_d_portfolio5
+            method = none
+        ;
+            by portfolio por_date security_id;
+            id from_date;
+
+            convert return_ = from_return_index / transform = (+1 cuprod lag 1);
+
+            format from_return_index comma20.3;
+        run;
+    %end;
+
+    %* Initiate return index to 1;
+    data k3t_d_portfolio6;
+        set k3t_d_portfolio5;
+        by portfolio por_date security_id;
+        if first.security_id then do;
+            from_return_index = 1;
+        end;
+    run;
+
+    %* Change variable order for clarity;
+    proc sql;
+        create table k3t_d_portfolio7 as
+        select
+            portfolio,
+            security_id,
+            from_date,
+            date_,
+            por_date,
+            por_age,
+            por_date_weight,
+            return_,
+            from_return_index format = comma10.6,
+            por_date_weight * from_return_index format = percentn20.3 as from_weight_base,
+            calculated from_weight_base / sum(calculated from_weight_base) format = percentn20.3 as from_weight
+        from k3t_d_portfolio6
+        group by
+            portfolio,
+            from_date
+        order by portfolio, security_id, from_date;
+    quit;
+
+    %* Clean data;
+    proc sql;
+        create table &d_portfolio_ods as
+        select
+            portfolio,
+            security_id,
+            from_date as date_,
+            from_weight as weight
+        from k3t_d_portfolio7
+        where
+            from_date >= &k3t_start_date_n
+            and from_date <= &k3t_end_date_n
+        ;
+    quit;
+
+%** DELETE DATASETS ---------------------------------------------------------------------------------------------------;
+
+    %if &test_mode = 0 %then %do;
+        proc datasets nolist;
+            delete k3t_:;
+            run;
+        quit;
+    %end;
+%mend;
+
+/** TEST --------------------------------------------------------------------------------------------------------------;
+
+    %* Persistent library;
+    libname user "&SAS_USER_DIR";
+
+    %* Create portfolio;
+    data portfolio;
+        length portfolio $32;
+        portfolio = "PORTFOLIO";
+        %* EUR currency;
+        security_id = -47;
+        date_ = "20MAY2019"d;
+        weight = 0.2;
+        output;
+        %* BMW;
+        security_id = 24;
+        weight = 0.8;
+        output;
+
+        %* SEK currency;
+        security_id = -126;
+        date_ = "23MAY2019"d;
+        weight = 0.3;
+        output;
+        %* EUR currency;
+        security_id = -47;
+        weight = 0.2;
+        output;
+        security_id = 24;
+        weight = 0.5;
+        output;
+
+        format date_ %date_format();
+        format weight percentn20.3;
+    run;
+
+    %* Create daily returns;
+    data d_return;
+        security_id = -47;
+        from_date = "20MAY2019"d;
+        date_ = "21MAY2019"d;
+        net_eur_return = 0;
+        output;
+        security_id = 24;
+        net_eur_return = 0.05;
+        output;
+
+        security_id = -47;
+        from_date = "21MAY2019"d;
+        date_ = "22MAY2019"d;
+        net_eur_return = 0;
+        output;
+        security_id = 24;
+        net_eur_return = 0.06;
+        output;
+
+        security_id = -126;
+        from_date = "23MAY2019"d;
+        date_ = "24MAY2019"d;
+        net_eur_return = 0.0010;
+        output;
+
+        security_id = 24;
+        from_date = "24MAY2019"d;
+        date_ = "27MAY2019"d;
+        net_eur_return = -0.02;
+        output;
+
+        format from_date date_ %date_format();
+        format net_eur_return percentn20.3;
+    run;
+
+    %* Run macro;
+    %drift_portfolio(
+        portfolio_ds = portfolio,
+        d_return_ds = d_return,
+        return_var = net_eur_return,
+        start_date = 2019-05-22,
+        end_date = 2019-05-28,
+
+        d_portfolio_ods = d_portfolio,
+
+        test_mode = 1
+    );
+
+    %* oscl>
+    output_system(
+        folder(
+            name = "DATA",
+            open = true,
+            folder(
+                name = "INPUT DATA",
+                table(data = portfolio),
+                table(data = d_return),
+            ),
+            folder(
+                name = "CREATE DAILY TEMPLATE",
+                table(data = k3t_time_flow_template),
+                table(data = k3t_por_date),
+                table(data = k3t_return_date),
+                table(data = k3t_por_return_date_template),
+                table(data = k3t_d_template),
+            ),
+            folder(
+                name = "POPULATE TEMPLATE WITH WEIGHTS AND RETURNS",
+                table(data = k3t_d_portfolio1),
+            ),
+            folder(
+                name = "REPLACE MISSING RETURNS",
+                table(data = k3t_d_portfolio2),
+                table(data = k3t_d_portfolio3),
+                table(data = k3t_d_portfolio4),
+            ),
+            folder(
+                name = "DRIFT WEIGHTS",
+                table(data = k3t_d_portfolio5),
+                table(data = k3t_d_portfolio6),
+                table(data = k3t_d_portfolio7),
+                table(data = d_portfolio),
+            ),
+        ),
+    );
+
+%** ------------------------------------------------------------------------------------------------------------------*/
