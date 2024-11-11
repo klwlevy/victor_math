@@ -1,0 +1,190 @@
+/** ABOUT -------------------------------------------------------------------------------------------------------------;
+
+    MACRO: calc_portfolio_gross_weight
+    AUTHOR: Reine Saljo
+    DATE: 2019-10-14
+    PREFIX: o3w
+    CODE_STANDARD: A
+
+    DESCRIPTION ----------------------------------------------------------------------------------------------------
+
+        Calculates portfolio gross weights given data. The calculations are as follows:
+
+            for any by-group, portfolio and date:
+
+                gross_weight = sum(abs(security.weight))
+
+            where
+
+                gross_weight:    (1 x 1)
+                security.weight: (n x 1)
+
+                n = number of securities
+
+    INPUT ----------------------------------------------------------------------------------------------------------
+
+        %calc_portfolio_gross_weight(
+          * portfolio_ds =,                dataset: portfolios
+            by_vars =,                     variables in <portfolio_ds>
+
+          * portfolio_gross_weight_ods =,  output dataset: portfolio gross weights
+
+            test_mode = 0                  when 1: keep temporary data
+        );
+
+          * = mandatory
+
+        ------------------------------------------------------------------------------------------------------------
+
+        SAS_DATASET: <portfolio_ds>
+            (<by_vars>)
+            portfolio
+            security_id
+            date_
+            weight
+
+    OUTPUT ---------------------------------------------------------------------------------------------------------
+
+        SAS_DATASET: <portfolio_gross_weight_ods>
+            (<by_vars>)
+            portfolio
+            date_
+            gross_weight
+
+    DEPENDENCIES ---------------------------------------------------------------------------------------------------
+
+%** INCLUDE MACROS ---------------------------------------------------------------------------------------------------*/
+
+    %include_macro(util\anonymize\anonymize_data);
+    %include_macro(util\anonymize\deanonymize_data);
+
+%** MACRO -------------------------------------------------------------------------------------------------------------;
+
+%macro calc_portfolio_gross_weight(
+    portfolio_ds =,
+    by_vars =,
+
+    portfolio_gross_weight_ods =,
+
+    test_mode = 0
+);
+%** ANONYMIZE DATA ----------------------------------------------------------------------------------------------------;
+
+    %anonymize_data(
+        dataset = &portfolio_ds,
+        vars = &by_vars,
+        anonymize_var = o3w_by_var,
+
+        anonymize_map_ods = o3w_by_var_map,
+        output_dataset = o3w_portfolio
+    );
+
+%** CALCULATE PORTFOLIO GROSS WEIGHTS ---------------------------------------------------------------------------------;
+
+    proc sql;
+        create table o3w_portfolio_gross_weight1 as
+        select
+            o3w_by_var,
+            portfolio,
+            date_,
+            sum((security_id > 0) * abs(weight)) format = percentn20.3 as gross_weight
+        from o3w_portfolio
+        group by o3w_by_var, portfolio, date_;
+    quit;
+
+%** DEANONYMIZE DATA --------------------------------------------------------------------------------------------------;
+
+    %deanonymize_data(
+        anonymize_map_ds = o3w_by_var_map,
+        dataset = o3w_portfolio_gross_weight1,
+
+        output_dataset = &portfolio_gross_weight_ods
+    );
+    proc sort;
+        by &by_vars portfolio date_;
+    run;
+
+%** DELETE DATASETS ---------------------------------------------------------------------------------------------------;
+
+    %if &test_mode = 0 %then %do;
+        proc datasets nolist;
+            delete o3w_:;
+            run;
+        quit;
+    %end;
+%mend;
+
+/** TEST --------------------------------------------------------------------------------------------------------------;
+
+    %* Persistent library;
+    libname user "&SALJO_USER_DIR";
+
+    %* Include macros;
+    %include_macro(util\misc\date_macros);
+
+    %* Create monthly portfolio;
+    data m_portfolio;
+        length portfolio $32;
+        portfolio = "PORTFOLIO";
+        security_id = 1;
+        date_ = "01JAN2019"d;
+        weight = -0.2;
+        output;
+        security_id = 2;
+        weight = 0.5;
+        output;
+        security_id = 3;
+        weight = -0.3;
+        output;
+
+        security_id = 1;
+        date_ = "01FEB2019"d;
+        weight = -0.4;
+        output;
+        security_id = 2;
+        weight = 0.4;
+        output;
+        security_id = 3;
+        weight = -0.2;
+        output;
+
+        format date_ %date_format();
+        format weight percentn20.3;
+    run;
+
+    %* Run macro;
+    %calc_portfolio_gross_weight(
+        portfolio_ds = m_portfolio,
+        by_vars =,
+
+        portfolio_gross_weight_ods = m_portfolio_gross_weight,
+
+        test_mode = 1
+    );
+
+    %* oscl>
+    output_system(
+        folder(
+            name = "DATA",
+            open = true,
+            folder(
+                name = "INPUT DATA",
+                table(data = m_portfolio),
+            ),
+            folder(
+                name = "ANONYMIZE DATA",
+                table(data = o3w_by_var_map),
+                table(data = o3w_portfolio),
+            ),
+            folder(
+                name = "CALCULATE PORTFOLIO GROSS WEIGHTS",
+                table(data = o3w_portfolio_gross_weight1),
+            ),
+            folder(
+                name = "DEANONYMIZE DATA",
+                table(data = m_portfolio_gross_weight),
+            ),
+        ),
+    );
+
+%** ------------------------------------------------------------------------------------------------------------------*/

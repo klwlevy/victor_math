@@ -1,0 +1,300 @@
+/** ABOUT -------------------------------------------------------------------------------------------------------------;
+
+    MACRO: calc_d_por_security_contrib
+    AUTHOR: Walter Levy
+    DATE: 2019-11-29
+    PREFIX: e9y
+    CODE_STANDARD: A
+
+    DESCRIPTION ----------------------------------------------------------------------------------------------------
+
+        Calculates daily portfolio security contributions given data.
+
+        Handles both equity securities (security_id > 0) and currency securities (security_id < 0).
+
+        When returns are missing (unexpectedly), a replace missing methodology is used.
+
+    INPUT ----------------------------------------------------------------------------------------------------------
+
+        %calc_d_por_security_contrib(
+          * d_portfolio_ds =,              dataset: daily portfolios
+          * d_return_ds =,                 dataset: daily returns
+          * return_var =,                  return-variable in <d_return_ds>, example: net_eur_return
+
+          * d_por_security_contrib_ods =,  output dataset: daily portfolio security contributions
+
+            test_mode = 0                  when 1: keep temporary data
+        );
+
+          * = mandatory
+
+        ------------------------------------------------------------------------------------------------------------
+
+        SAS_DATASET: <d_portfolio_ds>
+            portfolio
+            security_id
+            date_
+            weight
+
+        SAS_DATASET: <d_return_ds>
+            security_id
+            from_date                  maps to <d_portfolio_ds>.date_
+            date_
+            <return_var>
+
+    OUTPUT ---------------------------------------------------------------------------------------------------------
+
+        SAS_DATASET: <d_por_security_contrib_ods>
+            portfolio
+            security_id
+            from_date
+            date_
+            from_weight
+            <return_var>
+            return_contrib
+
+    DEPENDENCIES ---------------------------------------------------------------------------------------------------
+
+%** INCLUDE MACROS ---------------------------------------------------------------------------------------------------*/
+
+    %include_macro(util\misc\date_macros);
+    %include_macro(util\misc\extract_vars_from_dataset);
+    %include_macro(util\misc\replace_missing);
+    %include_macro(util\time_series\create_time_flow_template);
+
+%** MACRO -------------------------------------------------------------------------------------------------------------;
+
+%macro calc_d_por_security_contrib(
+    d_portfolio_ds =,
+    d_return_ds =,
+    return_var =,
+
+    d_por_security_contrib_ods =,
+
+    test_mode = 0
+);
+%** CREATE TIME-PERIOD ------------------------------------------------------------------------------------------------;
+
+    %* Extract time-period covering all from_date:s;
+    proc sql noprint;
+        select min(date_) format = %mdate_format() into :e9y_start_date from &d_portfolio_ds;
+        select max(date_) format = %mdate_format() into :e9y_end_date from &d_portfolio_ds;
+    quit;
+
+%** CREATE DAILY TEMPLATE ---------------------------------------------------------------------------------------------;
+
+    %* Create daily time-flow template;
+    %create_time_flow_template(
+        start_date = &e9y_start_date,
+        end_date = %next_business_date(&e9y_end_date),
+
+        freq = 1,
+        freq_unit = D,
+        date_rule = FBD,
+
+        time_flow_template_ods = e9y_d_time_flow_template
+    );
+
+    %* Create daily template;
+    proc sql;
+        create table e9y_d_template as
+        select
+            a.portfolio,
+            a.security_id,
+            b.from_date,
+            b.date_
+        from
+            &d_portfolio_ds as a
+            inner join e9y_d_time_flow_template as b on
+                a.date_ = b.from_date
+        ;
+    quit;
+
+%** POPULATE TEMPLATE WITH WEIGHTS AND RETURNS ------------------------------------------------------------------------;
+
+    proc sql;
+        create table e9y_d_por_security_contrib1 as
+        select
+            a.*,
+            b.weight as from_weight,
+            c.&return_var as return_
+        from
+            e9y_d_template as a
+            left join &d_portfolio_ds as b on
+                a.portfolio = b.portfolio
+                and a.security_id = b.security_id
+                and a.from_date = b.date_
+            left join &d_return_ds as c on
+                a.security_id = c.security_id
+                and a.from_date = c.from_date
+                and a.date_ = c.date_
+        ;
+    quit;
+
+%** REPLACE MISSING RETURNS -------------------------------------------------------------------------------------------;
+
+    %* Create asset class variable to enable different missing value treatment;
+    proc sql;
+        create table e9y_d_por_security_contrib2 as
+        select
+            *,
+            case
+                when security_id > 0 then "EQY"
+                when security_id < 0 then "CCY"
+                else "NA"
+            end length = 3 as asset_class
+        from e9y_d_por_security_contrib1
+        order by portfolio, asset_class, from_date, date_, security_id;
+    quit;
+
+    %* Replace with median return for the asset class between from_date and date_, per portfolio;
+    %replace_missing(
+        dataset = e9y_d_por_security_contrib2,
+        by_vars = portfolio asset_class from_date date_,
+        vars = return_,
+        replace_with = MEDIAN,
+
+        output_dataset = e9y_d_por_security_contrib3
+    );
+
+    %* Emergency fallback, really bad data when this applies;
+    %replace_missing(
+        dataset = e9y_d_por_security_contrib3,
+        by_vars =,
+        vars = return_,
+        replace_with = 0,
+
+        output_dataset = e9y_d_por_security_contrib4
+    );
+
+%** CALCULATE DAILY PORTFOLIO SECURITY CONTRIBUTIONS ------------------------------------------------------------------;
+
+    proc sql;
+        create table &d_por_security_contrib_ods as
+        select
+            portfolio,
+            security_id,
+            from_date,
+            date_,
+            from_weight,
+            return_ as &return_var,
+            from_weight * return_ format = percentn20.3 as return_contrib
+        from e9y_d_por_security_contrib4
+        order by portfolio, security_id, from_date;
+    quit;
+
+%** DELETE DATASETS ---------------------------------------------------------------------------------------------------;
+
+    %if &test_mode = 0 %then %do;
+        proc datasets nolist;
+            delete e9y_:;
+            run;
+        quit;
+    %end;
+%mend;
+
+/** TEST --------------------------------------------------------------------------------------------------------------;
+
+    %* Persistent library;
+    libname user "&SAS_USER_DIR";
+
+    %* Include macros;
+    %include_macro(portfolio\modify_portfolio\drift_portfolio);
+
+    %* Create portfolio;
+    data portfolio;
+        length portfolio $32;
+        portfolio = "PORTFOLIO";
+        %* EUR, currency;
+        security_id = -47;
+        date_ = "07JAN2019"d;
+        weight = 0.2;
+        output;
+        %* BMW;
+        security_id = 24;
+        weight = 0.8;
+        output;
+
+        format date_ %date_format();
+        format weight percentn20.3;
+    run;
+
+    %* Create daily returns;
+    data d_return;
+        security_id = -47;
+        from_date = "07JAN2019"d;
+        date_ = "08JAN2019"d;
+        net_eur_return = 0.0010;
+        output;
+        security_id = 24;
+        net_eur_return = 0.05;
+        output;
+
+        security_id = -47;
+        from_date = "08JAN2019"d;
+        date_ = "09JAN2019"d;
+        net_eur_return = 0.0009;
+        output;
+        security_id = 24;
+        net_eur_return = 0.06;
+        output;
+
+        format from_date date_ %date_format();
+        format net_eur_return percentn20.3;
+    run;
+
+    %* Create daily portfolio;
+    %drift_portfolio(
+        portfolio_ds = portfolio,
+        d_return_ds = d_return,
+        return_var = net_eur_return,
+        start_date = 2019-01-07,
+        end_date = 2019-01-08,
+
+        d_portfolio_ods = d_portfolio
+    );
+
+    %* Run macro;
+    %calc_d_por_security_contrib(
+        d_portfolio_ds = d_portfolio,
+        d_return_ds = d_return,
+        return_var = net_eur_return,
+
+        d_por_security_contrib_ods = d_por_security_contrib,
+
+        test_mode = 1
+    );
+
+    %* oscl>
+    output_system(
+        folder(
+            name = "DATA",
+            open = true,
+            folder(
+                name = "INPUT DATA",
+                table(data = d_portfolio),
+                table(data = d_return),
+            ),
+            folder(
+                name = "CREATE DAILY TEMPLATE",
+                table(data = e9y_d_time_flow_template),
+                table(data = e9y_d_template),
+            ),
+            folder(
+                name = "POPULATE TEMPLATE WITH WEIGHTS AND RETURNS",
+                table(data = e9y_d_por_security_contrib1),
+            ),
+            folder(
+                name = "REPLACE MISSING RETURNS",
+                table(data = e9y_d_por_security_contrib2),
+                table(data = e9y_d_por_security_contrib3),
+                table(data = e9y_d_por_security_contrib4),
+            ),
+            folder(
+                name = "CALCULATE DAILY SECURITY CONTRIBUTIONS",
+                table(data = d_por_security_contrib),
+            ),
+        ),
+    );
+
+%** ------------------------------------------------------------------------------------------------------------------*/

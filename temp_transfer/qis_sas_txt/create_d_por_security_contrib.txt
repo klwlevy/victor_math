@@ -1,0 +1,278 @@
+/** ABOUT -------------------------------------------------------------------------------------------------------------;
+
+    MACRO: create_d_por_security_contrib
+    AUTHOR: Walter Levy
+    DATE: 2019-11-29
+    PREFIX: x7l
+    CODE_STANDARD: A
+
+    DESCRIPTION ----------------------------------------------------------------------------------------------------
+
+        Creates a daily portfolio security contribution given a portfolio (on arbitrary dates).
+
+        The macro fetches returns internally and makes use of other generic portfolio macros.
+
+        TODO: Expose div_tax and max_price_return parameters.
+
+    INPUT ----------------------------------------------------------------------------------------------------------
+
+        %create_d_por_security_contrib(
+          * portfolio_ds =,                dataset: portfolio
+            start_date =,                  when unset: first portfolio date, example: 2018-12-31
+            end_date =,                    when unset: previous business date
+            base_currency = EUR,           values: EUR|USD
+
+          * d_por_security_contrib_ods =,  output dataset: daily portfolio security contribution
+
+            test_mode = 0                  when 1: keep temporary data
+        );
+
+          * = mandatory
+
+        ------------------------------------------------------------------------------------------------------------
+
+        SAS_DATASET: <portfolio_ds>
+            portfolio                      only one value allowed
+            security_id
+            date_
+            weight                         does not have to sum to 100% by portfolio and date_
+
+    OUTPUT ---------------------------------------------------------------------------------------------------------
+
+        SAS_DATASET: <d_por_security_contrib_ods>
+            portfolio
+            security_id
+            from_date
+            date_
+            from_weight
+            net_<base_currency>_return
+            return_contrib
+
+    DEPENDENCIES ---------------------------------------------------------------------------------------------------
+
+%** INCLUDE MACROS ---------------------------------------------------------------------------------------------------*/
+
+    %include_macro(portfolio\create_portfolio_contrib\calc_d_por_security_contrib);
+    %include_macro(portfolio\modify_portfolio\complete_portfolio);
+    %include_macro(portfolio\modify_portfolio\drift_portfolio);
+    %include_macro(universe\universe1\create_universe_data\create_u1_d_return);
+    %include_macro(util\misc\date_macros);
+
+%** MACRO -------------------------------------------------------------------------------------------------------------;
+
+%macro create_d_por_security_contrib(
+    portfolio_ds =,
+    start_date =,
+    end_date =,
+    base_currency = EUR,
+
+    d_por_security_contrib_ods =,
+
+    test_mode = 0
+);
+%** SET CONSTANTS -----------------------------------------------------------------------------------------------------;
+
+    %* Dividend tax;
+    %let x7l_DIV_TAX = 0.25;
+
+    %* Max price return;
+    %let x7l_MAX_PRICE_RETURN = 0.75;
+
+    %* Price type;
+    %let x7l_PRICE_TYPE = NET;
+
+%** CREATE MACRO VARIABLES --------------------------------------------------------------------------------------------;
+
+    %* Create lowercase base-currency;
+    %let x7l_low_bcy = %lowcase(&base_currency);
+
+    %* Create return-variable;
+    %let x7l_return_var = %lowcase(&x7l_PRICE_TYPE)_&x7l_low_bcy._return;
+
+%** CREATE TIME-PERIOD ------------------------------------------------------------------------------------------------;
+
+    %* Extract first portfolio date;
+    proc sql noprint;
+        select min(date_) format = %mdate_format() into :x7l_first_por_date from &portfolio_ds;
+    quit;
+
+    %* Create start date;
+    %if %date_to_num(&start_date) >= %date_to_num(&x7l_first_por_date) %then %do;
+        %let x7l_start_date = &start_date;
+    %end;
+    %else %do;
+        %let x7l_start_date = &x7l_first_por_date;
+    %end;
+    %let x7l_start_date_n = %date_to_num(&x7l_start_date);
+
+    %* Extract last portfolio date before start date;
+    proc sql noprint;
+        select max(date_) format = %mdate_format() into :x7l_last_por_date_bef_start_date from &portfolio_ds
+        where date_ <= &x7l_start_date_n;
+    quit;
+
+    %* Create extended start date;
+    %let x7l_ext_start_date = &x7l_last_por_date_bef_start_date;
+    %let x7l_ext_start_date_n = %date_to_num(&x7l_ext_start_date);
+
+    %* Create end date;
+    %if %length(&end_date) > 0 %then %do;
+        %let x7l_end_date = &end_date;
+    %end;
+    %else %do;
+        %let x7l_end_date = %prev_business_date();
+    %end;
+    %let x7l_end_date_n = %date_to_num(&x7l_end_date);
+
+    %put LOG: x7l_start_date = &x7l_start_date;
+    %put LOG: x7l_ext_start_date = &x7l_ext_start_date;
+    %put LOG: x7l_end_date = &x7l_end_date;
+
+%** CREATE UNIVERSE ---------------------------------------------------------------------------------------------------;
+
+    proc sql;
+        create table x7l_universe as
+        select distinct
+            security_id,
+            %date_to_num(&x7l_ext_start_date) format = %date_format() as start_date,
+            %date_to_num(&x7l_end_date) format = %date_format() as end_date,
+            1 as in_universe
+        from &portfolio_ds;
+    quit;
+
+%** CREATE RETURNS ----------------------------------------------------------------------------------------------------;
+
+    %create_u1_d_return(
+        universe_ds = x7l_universe,
+        listing = AUTO,
+        currency = LOCAL,
+        base_currency = &base_currency,
+
+        div_tax = &x7l_DIV_TAX,
+        max_price_return = &x7l_MAX_PRICE_RETURN,
+
+        d_return_ods = x7l_d_return
+    );
+
+%** COMPLETE PORTFOLIO ------------------------------------------------------------------------------------------------;
+
+    %complete_portfolio(
+        portfolio_ds = &portfolio_ds,
+        base_currency = &base_currency,
+
+        portfolio_ods = x7l_portfolio
+    );
+
+%** DRIFT PORTFOLIO ---------------------------------------------------------------------------------------------------;
+
+    %drift_portfolio(
+        portfolio_ds = x7l_portfolio,
+        d_return_ds = x7l_d_return,
+        return_var = &x7l_return_var,
+        start_date = &x7l_start_date,
+        end_date = &x7l_end_date,
+
+        d_portfolio_ods = x7l_d_portfolio
+    );
+
+%** CALCULATE DAILY PORTFOLIO SECURITY CONTRIBUTIONS ------------------------------------------------------------------;
+
+    %calc_d_por_security_contrib(
+        d_portfolio_ds = x7l_d_portfolio,
+        d_return_ds = x7l_d_return,
+        return_var = &x7l_return_var,
+
+        d_por_security_contrib_ods = &d_por_security_contrib_ods
+    );
+
+%** DELETE DATASETS ---------------------------------------------------------------------------------------------------;
+
+    %if &test_mode = 0 %then %do;
+        proc datasets nolist;
+            delete x7l_:;
+            run;
+        quit;
+    %end;
+%mend;
+
+/** TEST --------------------------------------------------------------------------------------------------------------;
+
+    %* Persistent library;
+    libname user "&SAS_USER_DIR";
+
+    %* Create portfolios;
+    data portfolio;
+        length portfolio $32;
+        portfolio = "PORTFOLIO1";
+        %* EUR, currency;
+        security_id = -47;
+        date_ = "26DEC2018"d;
+        weight = 1;
+        output;
+
+        %* BMW;
+        security_id = 24;
+        date_ = "07JAN2019"d;
+        weight = 0.6;
+        output;
+        %* SEK, currency;
+        security_id = -126;
+        weight = 0.2;
+        output;
+
+        portfolio = "PORTFOLIO2";
+        security_id = -126;
+        date_ = "23JAN2019"d;
+        weight = 0.2;
+        output;
+
+        format date_ %date_format();
+        format weight percentn20.3;
+    run;
+
+    %* Run macro;
+    %create_d_por_security_contrib(
+        portfolio_ds = portfolio,
+        start_date = 2018-12-31,
+        end_date = 2019-01-30,
+        base_currency = EUR,
+
+        d_por_security_contrib_ods = d_por_security_contrib,
+
+        test_mode = 1
+    );
+
+    %* oscl>
+    output_system(
+        folder(
+            name = "DATA",
+            open = true,
+            folder(
+                name = "INPUT DATA",
+                table(data = portfolio),
+            ),
+            folder(
+                name = "CREATE UNIVERSE",
+                table(data = x7l_universe),
+            ),
+            folder(
+                name = "CREATE RETURNS",
+                table(data = x7l_d_return1),
+                table(data = x7l_d_return),
+            ),
+            folder(
+                name = "COMPLETE PORTFOLIO",
+                table(data = x7l_portfolio),
+            ),
+            folder(
+                name = "DRIFT PORTFOLIO",
+                table(data = x7l_d_portfolio),
+            ),
+            folder(
+                name = "CALCULATE DAILY PORTFOLIO SECURITY CONTRIBUTIONS",
+                table(data = d_por_security_contrib),
+            ),
+        ),
+    );
+
+%** ------------------------------------------------------------------------------------------------------------------*/

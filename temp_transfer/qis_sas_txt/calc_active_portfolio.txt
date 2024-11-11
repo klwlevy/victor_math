@@ -1,0 +1,222 @@
+/** ABOUT -------------------------------------------------------------------------------------------------------------;
+
+    MACRO: calc_active_portfolio
+    AUTHOR: Reine Saljo
+    DATE: 2019-10-13
+    PREFIX: e7v
+    CODE_STANDARD: A
+
+    DESCRIPTION ----------------------------------------------------------------------------------------------------
+
+        Calculates an active portfolio given a portfolio and a benchmark. The calculations are as follows:
+
+            for any by-group and date:
+
+                active_portfolio.security.weight = portfolio.security.weight - benchmark.security.weight
+
+            where
+
+                active_portfolio.security.weight: (n x 1)
+                portfolio.security.weight:        (n x 1)
+                benchmark.security.weight:        (n x 1)
+
+                n = number of securities
+
+        The weights of an active portfolio always sums to 0%.
+
+    INPUT ----------------------------------------------------------------------------------------------------------
+
+        %calc_active_portfolio(
+          * portfolio_ds =,          dataset: portfolio
+            benchmark_ds =,          dataset: portfolio
+            by_vars =,               variables in <portfolio_ds> and <benchmark_ds>
+            name = ACTIVE,           name of active portfolio
+
+          * active_portfolio_ods =,  output dataset: active portfolio
+
+            test_mode = 0            when 1: keep temporary data
+        );
+
+          * = mandatory
+
+        ------------------------------------------------------------------------------------------------------------
+
+        SAS_DATASET: <portfolio_ds>
+            (<by_vars>)
+            portfolio                only one value allowed
+            security_id
+            date_
+            weight
+
+        SAS_DATASET: <benchmark_ds>
+            (<by_vars>)
+            portfolio                only one value allowed
+            security_id
+            date_
+            weight
+
+    OUTPUT ---------------------------------------------------------------------------------------------------------
+
+        SAS_DATASET: <active_portfolio_ods>
+            (<by_vars>)
+            portfolio                        = <name>
+            security_id
+            date_
+            weight
+
+    DEPENDENCIES ---------------------------------------------------------------------------------------------------
+
+%** INCLUDE MACROS ---------------------------------------------------------------------------------------------------*/
+
+    %include_macro(portfolio\calc_trade\calc_trade);
+
+%** MACRO -------------------------------------------------------------------------------------------------------------;
+
+%macro calc_active_portfolio(
+    portfolio_ds =,
+    benchmark_ds =,
+    by_vars =,
+    name = ACTIVE,
+
+    active_portfolio_ods =,
+
+    test_mode = 0
+);
+%** CALCULATE ACTIVE PORTFOLIO ----------------------------------------------------------------------------------------;
+
+    %if %length(&benchmark_ds) > 0 %then %do;
+        %* Rename portfolio to same provided name;
+        data e7v_portfolio;
+            set &portfolio_ds;
+            portfolio = "&name";
+        run;
+        data e7v_benchmark;
+            set &benchmark_ds;
+            portfolio = "&name";
+        run;
+
+        %* Calculate active portfolios;
+        %calc_trade(
+            old_portfolio_ds = e7v_benchmark,
+            new_portfolio_ds = e7v_portfolio,
+            by_vars = &by_vars,
+
+            trade_ods = &active_portfolio_ods
+        );
+    %end;
+    %else %do;
+        data &active_portfolio_ods;
+            set &portfolio_ds;
+            portfolio = "&name";
+        run;
+        proc sort;
+            by &by_vars portfolio security_id date_;
+        run;
+    %end;
+
+%** DELETE DATASETS ---------------------------------------------------------------------------------------------------;
+
+    %if &test_mode = 0 %then %do;
+        proc datasets nolist;
+            delete e7v_:;
+            run;
+        quit;
+    %end;
+%mend;
+
+/** TEST --------------------------------------------------------------------------------------------------------------;
+
+    %* Persistent library;
+    libname user "&SAS_USER_DIR";
+
+    %* Include macros;
+    %include_macro(util\misc\date_macros);
+
+    %* Create portfolio with by-variable;
+    data portfolio;
+        length simulation $32;
+        simulation = "SIMULATION1";
+        length portfolio $32;
+        portfolio = "PORTFOLIO";
+        security_id = 1;
+        date_ = "01JAN2019"d;
+        weight = 0.5;
+        output;
+        security_id = 2;
+        weight = 0.5;
+        output;
+
+        simulation = "SIMULATION2";
+        portfolio = "PORTFOLIO";
+        security_id = 1;
+        date_ = "01JAN2019"d;
+        weight = 0.5;
+        output;
+        security_id = 2;
+        weight = 0.5;
+        output;
+
+        format date_ %date_format();
+        format weight percentn20.3;
+    run;
+
+    %* Create benchmark with by-variable;
+    data benchmark;
+        length simulation $32;
+        simulation = "SIMULATION1";
+        length portfolio $32;
+        portfolio = "BENCHMARK";
+        security_id = 2;
+        date_ = "01JAN2019"d;
+        weight = 0.3;
+        output;
+        security_id = 3;
+        weight = 0.7;
+        output;
+
+        simulation = "SIMULATION2";
+        portfolio = "BENCHMARK";
+        security_id = 2;
+        date_ = "01JAN2019"d;
+        weight = 0.3;
+        output;
+        security_id = 3;
+        weight = 0.7;
+        output;
+
+        format date_ %date_format();
+        format weight percentn20.3;
+    run;
+
+    %* Run macro;
+    %calc_active_portfolio(
+        portfolio_ds = portfolio,
+        benchmark_ds = benchmark,
+        by_vars = simulation,
+        name = ACTIVE,
+
+        active_portfolio_ods = active_portfolio,
+
+        test_mode = 1
+    );
+
+    %* oscl>
+    output_system(
+        folder(
+            name = "DATA",
+            open = true,
+            folder(
+                name = "INPUT DATA",
+                table(data = portfolio),
+                table(data = benchmark),
+            ),
+            folder(
+                name = "CALCULATE ACTIVE PORTFOLIO",
+                table(data = e7v_portfolio),
+                table(data = e7v_benchmark),
+                table(data = active_portfolio),
+            ),
+        ),
+    );
+
+%** ------------------------------------------------------------------------------------------------------------------*/

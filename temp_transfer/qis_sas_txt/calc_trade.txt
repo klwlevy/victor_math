@@ -1,0 +1,256 @@
+/** ABOUT -------------------------------------------------------------------------------------------------------------;
+
+    MACRO: calc_trade
+    AUTHOR: Reine Saljo
+    DATE: 2019-10-13
+    PREFIX: r3k
+    CODE_STANDARD: A
+
+    DESCRIPTION ----------------------------------------------------------------------------------------------------
+
+        Calculates a trade given an old and a new portfolio. The calculations are as follows:
+
+            for any by-group, portfolio and date:
+
+                trade.security.weight = new_portfolio.security.weight - old_portfolio.security.weight
+
+            where
+
+                trade.security.weight:         (n x 1)
+                new_portfolio.security.weight: (n x 1)
+                old_portfolio.security.weight: (n x 1)
+
+                n = number of securities
+
+        The weights of a trade always sums to 0%.
+
+        The equity trades are not financed from currency securities.
+
+    INPUT ----------------------------------------------------------------------------------------------------------
+
+        %calc_trade(
+          * old_portfolio_ds =,  dataset: portfolio
+          * new_portfolio_ds =,  dataset: portfolio
+            by_vars =,           variables in <old_portfolio_ds> and <new_portfolio_ds>
+
+          * trade_ods =,         output dataset: trade
+
+            test_mode = 0        when 1: keep temporary data
+        );
+
+          * = mandatory
+
+        ------------------------------------------------------------------------------------------------------------
+
+        SAS_DATASET: <old_portfolio_ds>
+            (<by_vars>)
+            portfolio
+            security_id
+            date_
+            weight
+
+        SAS_DATASET: <new_portfolio_ds>
+            (<by_vars>)
+            portfolio
+            security_id
+            date_
+            weight
+
+    OUTPUT ---------------------------------------------------------------------------------------------------------
+
+        SAS_DATASET: <trade_ods>
+            (<by_vars>)
+            portfolio
+            security_id
+            date_
+            weight
+
+    DEPENDENCIES ---------------------------------------------------------------------------------------------------
+
+%** INCLUDE MACROS ---------------------------------------------------------------------------------------------------*/
+
+    %include_macro(util\anonymize\anonymize_data);
+    %include_macro(util\anonymize\deanonymize_data);
+    %include_macro(util\misc\date_macros);
+
+%** MACRO -------------------------------------------------------------------------------------------------------------;
+
+%macro calc_trade(
+    old_portfolio_ds =,
+    new_portfolio_ds =,
+    by_vars =,
+
+    trade_ods =,
+
+    test_mode = 0
+);
+%** ANONYMIZE DATA ----------------------------------------------------------------------------------------------------;
+
+    %anonymize_data(
+        dataset = &old_portfolio_ds,
+        vars = &by_vars,
+        anonymize_var = r3k_by_var,
+
+        anonymize_map_ods = r3k_by_var_map_a,
+        output_dataset = r3k_old_portfolio
+    );
+    %anonymize_data(
+        dataset = &new_portfolio_ds,
+        vars = &by_vars,
+        anonymize_var = r3k_by_var,
+
+        anonymize_map_ods = r3k_by_var_map_b,
+        output_dataset = r3k_new_portfolio
+    );
+
+%** CALCULATE TRADE ---------------------------------------------------------------------------------------------------;
+
+    proc sql;
+        create table r3k_trade1 as
+        select
+            coalesce(a.r3k_by_var, b.r3k_by_var) as r3k_by_var,
+            coalesce(a.portfolio, b.portfolio) as portfolio,
+            coalesce(a.security_id, b.security_id) as security_id,
+            coalesce(a.date_, b.date_) format = %date_format() as date_,
+            case
+                when a.weight ^= . and b.weight ^= .
+                then a.weight - b.weight
+
+                when a.weight ^= .
+                then a.weight
+
+                else -b.weight
+            end format = percentn20.3 as weight
+        from
+            r3k_new_portfolio as a
+            full join r3k_old_portfolio as b on
+                a.r3k_by_var = b.r3k_by_var
+                and a.portfolio = b.portfolio
+                and a.security_id = b.security_id
+                and a.date_ = b.date_
+        order by calculated r3k_by_var, calculated portfolio, calculated security_id, calculated date_;
+    quit;
+
+%** DEANONYMIZE DATA --------------------------------------------------------------------------------------------------;
+
+    %deanonymize_data(
+        anonymize_map_ds = r3k_by_var_map_a,
+        dataset = r3k_trade1,
+
+        output_dataset = &trade_ods
+    );
+    proc sort;
+        by &by_vars portfolio date_;
+    run;
+
+%** DELETE DATASETS ---------------------------------------------------------------------------------------------------;
+
+    %if &test_mode = 0 %then %do;
+        proc datasets nolist;
+            delete r3k_:;
+            run;
+        quit;
+    %end;
+%mend;
+
+/** TEST --------------------------------------------------------------------------------------------------------------;
+
+    %* Persistent library;
+    libname user "&SAS_USER_DIR";
+
+    %* Create old portfolio;
+    data old_portfolio;
+        length simulation $32;
+        simulation = "SIM1";
+        length portfolio $32;
+        portfolio = "POR";
+        security_id = 1;
+        date_ = "01JAN2019"d;
+        weight = 0.5;
+        output;
+        security_id = 2;
+        weight = 0.5;
+        output;
+
+        simulation = "SIM2";
+        portfolio = "POR1";
+        security_id = 1;
+        date_ = "01JAN2019"d;
+        weight = 0.5;
+        output;
+        security_id = 2;
+        weight = 0.5;
+        output;
+
+        format date_ %date_format();
+        format weight percentn20.3;
+    run;
+
+    %* Create new portfolio;
+    data new_portfolio;
+        length simulation $32;
+        simulation = "SIM1";
+        length portfolio $32;
+        portfolio = "POR";
+        security_id = 2;
+        date_ = "01JAN2019"d;
+        weight = 0.3;
+        output;
+        security_id = 3;
+        weight = 0.7;
+        output;
+
+        simulation = "SIM2";
+        portfolio = "POR2";
+        security_id = 2;
+        date_ = "01JAN2019"d;
+        weight = 0.3;
+        output;
+        security_id = 3;
+        weight = 0.7;
+        output;
+
+        format date_ %date_format();
+        format weight percentn20.3;
+    run;
+
+    %* Run macro;
+    %calc_trade(
+        old_portfolio_ds = old_portfolio,
+        new_portfolio_ds = new_portfolio,
+        by_vars = simulation,
+
+        trade_ods = trade,
+
+        test_mode = 1
+    );
+
+    %* oscl>
+    output_system(
+        folder(
+            name = "DATA",
+            open = true,
+            folder(
+                name = "INPUT DATA",
+                table(data = old_portfolio),
+                table(data = new_portfolio),
+            ),
+            folder(
+                name = "ANONYMIZE DATA",
+                table(data = r3k_by_var_map_a),
+                table(data = r3k_old_portfolio),
+                table(data = r3k_by_var_map_b),
+                table(data = r3k_new_portfolio),
+            ),
+            folder(
+                name = "CALCULATE TRADE",
+                table(data = r3k_trade1),
+            ),
+            folder(
+                name = "DEANONYMIZE DATA",
+                table(data = trade),
+            ),
+        ),
+    );
+
+%** ------------------------------------------------------------------------------------------------------------------*/

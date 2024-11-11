@@ -1,0 +1,216 @@
+/** ABOUT -------------------------------------------------------------------------------------------------------------;
+
+    MACRO: complete_portfolio
+    AUTHOR: Reine Saljo
+    DATE: 2019-10-24
+    PREFIX: t7s
+    CODE_STANDARD: A
+
+    DESCRIPTION ----------------------------------------------------------------------------------------------------
+
+        Makes sure the weights of a given portfolio sums to 100% by adding any residual weight to the base-currency
+        security. If the base-currency security does not exist, it will be created. The calculations are as follows:
+
+            for any by-group, portfolio and date:
+
+                residual.weight = 1 - sum(security.weight)
+
+            where
+
+                residual.weight: (1 x 1)
+                security.weight: (n x 1)
+
+                n = number of securities (before the operation)
+
+    INPUT ----------------------------------------------------------------------------------------------------------
+
+        %complete_portfolio(
+          * portfolio_ds =,       dataset: portfolios, possibly incomplete (sum of weights < 100%)
+            by_vars =,            variables in <portfolio_ds>
+            base_currency = EUR,  values: EUR|USD
+
+          * portfolio_ods =,      output dataset: portfolios, complete (sum of weights = 100%)
+
+            test_mode = 0         when 1: keep temporary data
+        );
+
+          * = mandatory
+
+        ------------------------------------------------------------------------------------------------------------
+
+        SAS_DATASET: <portfolio_ds>
+            (<by_vars>)
+            portfolio
+            security_id
+            date_
+            weight
+
+    OUTPUT ---------------------------------------------------------------------------------------------------------
+
+        SAS_DATASET: <portfolio_ods>
+            (<by_vars>)
+            portfolio
+            security_id
+            date_
+            weight
+
+    DEPENDENCIES ---------------------------------------------------------------------------------------------------
+
+%** INCLUDE MACROS ---------------------------------------------------------------------------------------------------*/
+
+    %include_macro(util\anonymize\anonymize_data);
+    %include_macro(util\anonymize\deanonymize_data);
+    %include_macro(util\misc\currency_macros);
+
+%** MACRO -------------------------------------------------------------------------------------------------------------;
+
+%macro complete_portfolio(
+    portfolio_ds =,
+    by_vars =,
+    base_currency = EUR,
+
+    portfolio_ods =,
+
+    test_mode = 0
+);
+%** ANONYMIZE DATA ----------------------------------------------------------------------------------------------------;
+
+    %anonymize_data(
+        dataset = &portfolio_ds,
+        vars = &by_vars,
+        anonymize_var = t7s_by_var,
+
+        anonymize_map_ods = t7s_by_var_map,
+        output_dataset = t7s_portfolio
+    );
+
+%** COMPLETE PORTFOLIO ------------------------------------------------------------------------------------------------;
+
+    %* Calculate residual weight on base-currency security;
+    proc sql;
+        create table t7s_residual_weight as
+        select
+            t7s_by_var,
+            portfolio,
+            %currency_to_id(&base_currency) as security_id,
+            date_,
+            1 - sum(weight) format = percentn20.3 as weight
+        from t7s_portfolio
+        group by
+            t7s_by_var,
+            portfolio,
+            date_
+        ;
+    quit;
+
+    %* Add residual weight to portfolio;
+    data t7s_portfolio1;
+        set
+            t7s_residual_weight
+            t7s_portfolio
+        ;
+    run;
+
+    %* Aggregate in case added base-currency security already existed in portfolio;
+    proc sql;
+        create table t7s_portfolio2 as
+        select
+            t7s_by_var,
+            portfolio,
+            security_id,
+            date_,
+            sum(weight) format = percentn20.3 as weight
+        from t7s_portfolio1
+        group by
+            t7s_by_var,
+            portfolio,
+            security_id,
+            date_
+        order by t7s_by_var, portfolio, security_id, date_;
+    quit;
+
+%** DEANONYMIZE DATA --------------------------------------------------------------------------------------------------;
+
+    %deanonymize_data(
+        anonymize_map_ds = t7s_by_var_map,
+        dataset = t7s_portfolio2,
+
+        output_dataset = &portfolio_ods
+    );
+    proc sort;
+        by &by_vars portfolio security_id date_;
+    run;
+
+%** DELETE DATASETS ---------------------------------------------------------------------------------------------------;
+
+    %if &test_mode = 0 %then %do;
+        proc datasets nolist;
+            delete t7s_:;
+            run;
+        quit;
+    %end;
+%mend;
+
+/** TEST --------------------------------------------------------------------------------------------------------------;
+
+    %* Persistent library;
+    libname user "&SAS_USER_DIR";
+
+    %* Include macro;
+    %include_macro(util\misc\date_macros);
+
+    %* Create incomplete portfolio;
+    data incomplete_portfolio;
+        length portfolio $32;
+        portfolio = "PORTFOLIO";
+        security_id = 1;
+        date_ = "01JAN2019"d;
+        weight = 0.5;
+        output;
+        security_id = 2;
+        weight = 0.4;
+        output;
+
+        format date_ %date_format();
+        format weight percentn20.3;
+    run;
+
+    %* Run macro;
+    %complete_portfolio(
+        portfolio_ds = incomplete_portfolio,
+        by_vars =,
+        base_currency = EUR,
+
+        portfolio_ods = portfolio,
+
+        test_mode = 1
+    );
+
+    %* oscl>
+    output_system(
+        folder(
+            name = "DATA",
+            open = true,
+            folder(
+                name = "INPUT DATA",
+                table(data = incomplete_portfolio),
+            ),
+            folder(
+                name = "ANONYMIZE DATA",
+                table(data = t7s_by_var_map),
+                table(data = t7s_portfolio),
+            ),
+            folder(
+                name = "COMPLETE PORTFOLIO",
+                table(data = t7s_residual_weight),
+                table(data = t7s_portfolio1),
+                table(data = t7s_portfolio2),
+            ),
+            folder(
+                name = "DEANONYMIZE DATA",
+                table(data = portfolio),
+            ),
+        ),
+    );
+
+%** ------------------------------------------------------------------------------------------------------------------*/
